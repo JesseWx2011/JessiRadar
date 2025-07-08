@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JessiRadar - Weather Radar</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <button id="menuBtn" aria-label="Menu">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect y="7" width="32" height="3.5" rx="1.75" fill="#3a8dde"/>
+                <rect y="14" width="32" height="3.5" rx="1.75" fill="#3a8dde"/>
+                <rect y="21" width="32" height="3.5" rx="1.75" fill="#3a8dde"/>
+            </svg>
+        </button>
+        <div id="menuDropdown" class="menu-dropdown" style="display:none;">
+            <button id="showLocationBtn">Show Location</button>
+        </div>
+        <div id="map"></div>
+        <div id="radarPlaybackModal" class="modal">
+            <div class="modal-content">
+                <div class="satellite-dropdowns">
+                    <select id="satelliteSelect">
+                        <option value="goes-east">GOES East</option>
+                        <option value="goes-west">GOES West</option>
+                    </select>
+                    <select id="regionSelect">
+                        <option value="meso1">Mesoscale Area 1</option>
+                        <option value="meso2">Mesoscale Area 2</option>
+                        <option value="conus">CONUS</option>
+                        <option value="fulldisk">Full Disk</option>
+                    </select>
+                </div>
+                <div id="satelliteLayerList">
+                    <button class="sat-layer-btn active" data-layer="visible">Visible Satellite</button>
+                    <button class="sat-layer-btn" data-layer="ir">IR Shortwave</button>
+                </div>
+                <div id="weatherModelControls" style="display: none;">
+                    <select id="modelSelect">
+                        <option value="hrrr">HRRR</option>
+                    </select>
+                </div>
+                <button id="playPauseBtn">▶</button>
+                <input type="range" id="frameSlider" min="0" max="7" value="0">
+                <span id="frameTimestamp">+0 hr</span>
+                <div id="radarProductSelect" style="margin-left:1rem;display:flex;gap:0.5rem;">
+                    <button class="radar-product-btn active" data-product="reflectivity">Reflectivity</button>
+                    <button class="radar-product-btn" data-product="velocity">Velocity</button>
+                </div>
+            </div>
+        </div>
+        <div class="tab-container">
+            <header>
+                <nav>
+                    <button id="radarBtn" class="active"><img src="icons/radar.svg" alt="Radar"/> Radar</button>
+                    <button id="satelliteBtn"><img src="icons/satellite.svg" alt="Satellite"/> Satellite</button>
+                    <button id="modelsBtn">Weather Models</button>
+                    <button id="globalRadarBtn">Global Radar</button>
+                </nav>
+            </header>
+            <main>
+            </main>
+        </div>
+    </div>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="scripts.js"></script>
+</body>
+</html> 

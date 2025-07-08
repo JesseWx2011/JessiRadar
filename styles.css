@@ -1,0 +1,433 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #181c20;
+    color: #fff;
+}
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100vw;
+    height: 100vh;
+}
+.tab-container {
+    background: #23272b;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    margin-top: 0.5rem;
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: absolute;
+    left: 50%;
+    top: 0.5rem;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+header {
+    background: none;
+    box-shadow: none;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    margin: 0;
+}
+header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+}
+nav {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    width: 100%;
+}
+nav button {
+    background: #2d3238;
+    border: none;
+    color: #fff;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0;
+    border-bottom: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s, border-bottom 0.3s cubic-bezier(0.4,0,0.2,1), color 0.2s;
+    font-size: 1rem;
+    flex: 1 1 0;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+nav button.active, nav button:active {
+    background: #23272b;
+    border-bottom: 3px solid #3a8dde;
+    color: #e0eaff;
+    transition: background 0.2s, border-bottom 0.3s cubic-bezier(0.4,0,0.2,1), color 0.2s;
+}
+nav button img {
+    width: 1.2em;
+    height: 1.2em;
+}
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    padding: 0;
+    margin: 0;
+}
+#map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: unset;
+    border-radius: 0;
+    z-index: 1;
+}
+#controls {
+    position: static;
+    top: unset;
+    right: unset;
+    left: unset;
+    bottom: unset;
+    background: #23272b;
+    border-radius: 0 0 16px 16px;
+    padding: 1.2rem 1.5rem;
+    box-shadow: none;
+    z-index: 11;
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+    justify-content: center;
+    align-items: center;
+    min-height: 60px;
+    border-top: 1px solid #2d3238;
+}
+#globalRadarBtn {
+    background: #3a8dde;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+#globalRadarBtn:hover, #globalRadarBtn:active {
+    background: #256bb2;
+    color: #e0eaff;
+}
+@media (max-width: 700px) {
+    .tab-container {
+        max-width: 98vw;
+        margin-top: 0.5rem;
+        top: 0.5rem;
+    }
+    #controls {
+        padding: 0.7rem 0.5rem;
+        gap: 0.7rem;
+        min-height: 40px;
+    }
+}
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.1rem;
+    }
+    #controls {
+        top: auto;
+        bottom: 1rem;
+        right: 50%;
+        transform: translateX(50%);
+        padding: 0.5rem 0.75rem;
+    }
+    nav button {
+        padding: 0.4rem 0.7rem;
+        font-size: 0.95rem;
+    }
+}
+#radarPlaybackModal {
+    position: fixed;
+    left: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 100;
+    background: rgba(35,39,43,0.95);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 0.7rem 1.2rem;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+}
+#radarPlaybackModal .modal-content {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+#playPauseBtn {
+    background: #3a8dde;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+#playPauseBtn:hover {
+    background: #256bb2;
+}
+#frameSlider {
+    width: 90px;
+    accent-color: #3a8dde;
+}
+#frameTimestamp {
+    min-width: 60px;
+    text-align: right;
+    font-size: 1rem;
+    color: #e0eaff;
+    font-family: monospace;
+}
+.satellite-dropdowns {
+    display: flex;
+    gap: 0.5rem;
+    margin-right: 1rem;
+}
+.satellite-dropdowns select {
+    background: #23272b;
+    color: #fff;
+    border: 1px solid #3a8dde;
+    border-radius: 6px;
+    padding: 0.3rem 0.8rem;
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.2s;
+}
+.satellite-dropdowns select:focus {
+    border-color: #256bb2;
+}
+#satelliteLayerList {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.7rem 0 0.2rem 0;
+    justify-content: flex-start;
+}
+.sat-layer-btn {
+    background: #2d3238;
+    color: #fff;
+    border: 1px solid #3a8dde;
+    border-radius: 6px;
+    padding: 0.3rem 1.1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+}
+.sat-layer-btn.active, .sat-layer-btn:active {
+    background: #3a8dde;
+    color: #fff;
+    border: 1.5px solid #256bb2;
+}
+.sat-layer-btn:hover {
+    background: #256bb2;
+    color: #e0eaff;
+}
+#weatherModelControls {
+    display: flex;
+    gap: 0.5rem;
+    margin-right: 1rem;
+}
+#weatherModelControls select {
+    background: #23272b;
+    color: #fff;
+    border: 1px solid #3a8dde;
+    border-radius: 6px;
+    padding: 0.3rem 0.8rem;
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.2s;
+}
+#weatherModelControls select:focus {
+    border-color: #256bb2;
+}
+.radar-product-btn {
+    background: #181c20;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 16px;
+    padding: 0.3rem 1.1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+}
+.radar-product-btn.active, .radar-product-btn:active {
+    background: #3a8dde;
+    color: #fff;
+    border: 2px solid #3a8dde;
+}
+.radar-product-btn:hover {
+    background: #23272b;
+    color: #e0eaff;
+}
+#menuBtn {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 200;
+    background: rgba(35,39,43,0.95);
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+#menuBtn:hover {
+    background: #3a8dde;
+}
+.menu-dropdown {
+    position: absolute;
+    top: 3.2rem;
+    left: 1rem;
+    z-index: 201;
+    background: #23272b;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    padding: 0.5rem 0;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.menu-dropdown button {
+    background: none;
+    border: none;
+    color: #e0eaff;
+    text-align: left;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.18s, color 0.18s;
+}
+.menu-dropdown button:hover {
+    background: #3a8dde;
+    color: #fff;
+}
+.gps-arrow-icon {
+    width: 40px;
+    height: 40px;
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+.gps-pulse {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    background: rgba(58, 141, 222, 0.25);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+    animation: gps-pulse-echo 1.5s infinite cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes gps-pulse-echo {
+    0% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    70% {
+        opacity: 0.15;
+        transform: translate(-50%, -50%) scale(2.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2.7);
+    }
+}
+.ipcam-marker {
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.18));
+    transition: transform 0.15s;
+}
+.ipcam-marker:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 4px 12px #3a8dde);
+}
+#ipcamModal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(24,28,32,0.85);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ipcam-modal-content {
+    background: #23272b;
+    border-radius: 14px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.22);
+    padding: 2rem 2.5rem 1.5rem 2.5rem;
+    max-width: 95vw;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+.ipcam-modal-content h2 {
+    color: #3a8dde;
+    margin-bottom: 1.2rem;
+    font-size: 1.3rem;
+    text-align: center;
+}
+.ipcam-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.18s;
+    z-index: 2;
+}
+.ipcam-modal-close:hover {
+    color: #3a8dde;
+}
+#ipcamPlayer {
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    margin-top: 0.5rem;
+} 
