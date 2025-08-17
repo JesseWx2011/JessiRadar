@@ -7,6 +7,13 @@ A modern, professional web application for real-time NEXRAD weather radar visual
 ## 🌦️ Features
 
 ### Core Features
+=======
+# NEXRAD Weather Radar Web Visualization
+
+A complete solution for fetching, processing, and visualizing NEXRAD Level 3 weather radar data on the web using Python, Flask, and Mapbox GL JS with WebGL rendering.
+
+## 🌦️ Features
+
 - **Real-time NEXRAD Data Processing**: Fetch and parse NEXRAD Level 3 files from NOAA's AWS S3 bucket
 - **WebGL Visualization**: High-performance rendering using Mapbox GL JS with WebGL
 - **Multiple Visualization Types**: Raster overlays and point-based visualizations
@@ -22,6 +29,7 @@ A modern, professional web application for real-time NEXRAD weather radar visual
 - **📍 Site Focus**: Automatically fly to selected radar locations on map
 - **🏷️ Site Information**: Detailed radar site info with elevation and coordinates
 
+=======
 ## 🏗️ Architecture
 
 ```
@@ -60,6 +68,22 @@ A modern, professional web application for real-time NEXRAD weather radar visual
 ### Option 2: Docker Compose (Production)
 
 1. **Run with Docker:**
+=======
+### Option 1: Docker Compose (Recommended)
+
+1. **Clone and setup:**
+   ```bash
+   git clone <your-repo>
+   cd nexrad-weather-radar
+   ```
+
+2. **Get a Mapbox token:**
+   - Visit [Mapbox Account](https://account.mapbox.com/)
+   - Create a free account and get your access token
+   - Edit `static/nexrad-web.js` and replace `'pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGZkZjk4YjEwMDAwM3FxcW1raGc4NTdhIn0.example'` with your actual token
+
+3. **Run with Docker:**
+
    ```bash
    docker-compose up -d
    ```
@@ -69,6 +93,13 @@ A modern, professional web application for real-time NEXRAD weather radar visual
    - API documentation: http://localhost/api
 
 ### Option 3: Manual Setup (Development)
+=======
+4. **Access the application:**
+   - Open http://localhost in your browser
+   - API documentation: http://localhost/api
+
+### Option 2: Local Development
+
 
 1. **Install Python dependencies:**
    ```bash
@@ -82,6 +113,10 @@ A modern, professional web application for real-time NEXRAD weather radar visual
 
 3. **Serve the frontend (in another terminal):**
    ```bash
+=======
+3. **Serve the frontend:**
+   ```bash
+   # Simple HTTP server
    cd static
    python -m http.server 8000
    ```
@@ -94,6 +129,9 @@ A modern, professional web application for real-time NEXRAD weather radar visual
 
 ```
 weatherradar-pro/
+=======
+nexrad-weather-radar/
+
 ├── nexrad_processor.py      # Core NEXRAD data processing
 ├── nexrad_api.py           # Flask API server
 ├── requirements.txt        # Python dependencies (standalone)
@@ -106,6 +144,11 @@ weatherradar-pro/
 │   ├── index.html          # Modern web interface
 │   ├── styles.css          # Professional styling
 │   └── app.js              # Advanced JavaScript application
+=======
+├── static/
+│   ├── index.html          # Web interface
+│   └── nexrad-web.js       # Frontend JavaScript
+
 └── README.md               # This file
 ```
 
@@ -196,6 +239,8 @@ Where:
 - `YYYY_MM_DD` = Date (e.g., `2024_01_15`)
 
 **Example:** `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=FDR_N0B_2024_01_15`
+
+=======
 
 ### Supported Products:
 - **N0B**: Base Reflectivity (0.5°)

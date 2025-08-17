@@ -7,6 +7,7 @@ class NEXRADVisualization {
     constructor() {
         // Replace with your Mapbox access token
         mapboxgl.accessToken = 'pk.eyJ1Ijoid2VhdGhlciIsImEiOiJjbHAxbHNjdncwaDhvMmptcno1ZTdqNDJ0In0.iywE3NefjboFg11a11ON0Q';
+        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN_HERE';
         
         this.map = null;
         this.currentData = null;
