@@ -6,7 +6,7 @@
 class NEXRADWebVisualization {
     constructor() {
         // Set your Mapbox access token here
-        mapboxgl.accessToken = 'pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGZkZjk4YjEwMDAwM3FxcW1raGc4NTdhIn0.example';
+        mapboxgl.accessToken = 'pk.eyJ1Ijoid2VhdGhlciIsImEiOiJjbHAxbHNjdncwaDhvMmptcno1ZTdqNDJ0In0.iywE3NefjboFg11a11ON0Q';
         
         this.map = null;
         this.currentJobId = null;
@@ -18,7 +18,7 @@ class NEXRADWebVisualization {
     
     init() {
         // Check if Mapbox token is set
-        if (mapboxgl.accessToken === 'pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGZkZjk4YjEwMDAwM3FxcW1raGc4NTdhIn0.example') {
+        if (mapboxgl.accessToken === 'pk.eyJ1Ijoid2VhdGhlciIsImEiOiJjbHAxbHNjdncwaDhvMmptcno1ZTdqNDJ0In0.iywE3NefjboFg11a11ON0Q') {
             this.showTokenWarning();
             return;
         }
