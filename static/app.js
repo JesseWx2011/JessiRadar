@@ -18,6 +18,8 @@ class WeatherRadarApp {
         this.currentFrame = 0;
         this.totalFrames = 0;
         this.animationInterval = null;
+        this.nexradSites = [];
+        this.availableFiles = [];
         
         // UI state
         this.leftSidebarCollapsed = false;
@@ -49,6 +51,9 @@ class WeatherRadarApp {
         // Load settings from localStorage
         this.loadSettings();
         
+        // Load NEXRAD sites data
+        await this.loadNEXRADSites();
+        
         // Initialize map
         this.initMap();
         
@@ -64,7 +69,10 @@ class WeatherRadarApp {
         // Apply theme
         this.applyTheme();
         
-        console.log('WeatherRadar Pro initialized successfully');
+        // Initialize UI with current date
+        this.initializeUI();
+        
+        console.log('WeatherRadar Pro (Alpha) initialized successfully');
     }
     
     hideLoadingScreen() {
@@ -169,6 +177,94 @@ class WeatherRadarApp {
         });
     }
     
+    async loadNEXRADSites() {
+        try {
+            const response = await fetch('/nexrad_sites.json');
+            const data = await response.json();
+            this.nexradSites = data.nexrad_sites;
+            this.populateRadarSiteDropdown();
+        } catch (error) {
+            console.error('Failed to load NEXRAD sites:', error);
+            // Fallback to a few common sites
+            this.nexradSites = [
+                { code: "FDR", name: "Frederick, OK", state: "Oklahoma", lat: 34.3622, lon: -99.0285 },
+                { code: "KFWS", name: "Dallas/Fort Worth, TX", state: "Texas", lat: 32.5731, lon: -97.3031 },
+                { code: "KOKX", name: "New York City, NY", state: "New York", lat: 40.8656, lon: -72.8639 },
+                { code: "KLOT", name: "Chicago, IL", state: "Illinois", lat: 41.6044, lon: -88.0844 },
+                { code: "KFFC", name: "Atlanta, GA", state: "Georgia", lat: 33.3636, lon: -84.5658 }
+            ];
+            this.populateRadarSiteDropdown();
+        }
+    }
+    
+    populateRadarSiteDropdown() {
+        const select = document.getElementById('radarSite');
+        
+        // Group sites by region for better organization
+        const regions = {};
+        this.nexradSites.forEach(site => {
+            const region = site.region || 'Other';
+            if (!regions[region]) regions[region] = [];
+            regions[region].push(site);
+        });
+        
+        // Clear existing options except the first one
+        select.innerHTML = '<option value="">Select a radar site...</option>';
+        
+        // Add sites grouped by region
+        Object.keys(regions).sort().forEach(region => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = region;
+            
+            regions[region].sort((a, b) => a.name.localeCompare(b.name)).forEach(site => {
+                const option = document.createElement('option');
+                option.value = site.code;
+                option.textContent = `${site.code} - ${site.name}, ${site.state}`;
+                optgroup.appendChild(option);
+            });
+            
+            select.appendChild(optgroup);
+        });
+    }
+    
+    initializeUI() {
+        // Set current date
+        const today = new Date();
+        const dateString = today.toISOString().split('T')[0];
+        document.getElementById('dataDate').value = dateString;
+        
+        // Set default radar site to FDR
+        document.getElementById('radarSite').value = 'FDR';
+        
+        // Update URL field when site or date changes
+        this.updateNEXRADUrl();
+    }
+    
+    buildNEXRADUrl(siteCode, date, product = 'N0B') {
+        // Format: https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=XXX_N0B_YYYY_MM_DD
+        const dateObj = new Date(date);
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        
+        return `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${siteCode}_${product}_${year}_${month}_${day}`;
+    }
+    
+    updateNEXRADUrl() {
+        const siteCode = document.getElementById('radarSite').value;
+        const date = document.getElementById('dataDate').value;
+        const product = document.getElementById('radarProduct').value || 'N0B';
+        
+        if (siteCode && date) {
+            const url = this.buildNEXRADUrl(siteCode, date, product);
+            // Don't overwrite if user has manually entered a URL
+            const urlField = document.getElementById('nexradUrl');
+            if (!urlField.value || urlField.value.includes('unidata-nexrad-level3.s3.amazonaws.com/?prefix=')) {
+                urlField.value = url;
+            }
+        }
+    }
+    
     setupEventListeners() {
         // Header buttons
         document.getElementById('settingsBtn').addEventListener('click', () => this.showSettingsModal());
@@ -181,7 +277,14 @@ class WeatherRadarApp {
         document.getElementById('bottomPanelToggle').addEventListener('click', () => this.toggleBottomPanel());
         
         // NEXRAD controls
+        document.getElementById('radarSite').addEventListener('change', () => {
+            this.updateNEXRADUrl();
+            this.focusOnRadarSite();
+        });
+        document.getElementById('dataDate').addEventListener('change', () => this.updateNEXRADUrl());
+        document.getElementById('radarProduct').addEventListener('change', () => this.updateNEXRADUrl());
         document.getElementById('loadDataBtn').addEventListener('click', () => this.loadNEXRADData());
+        document.getElementById('browseDataBtn').addEventListener('click', () => this.browseAvailableFiles());
         document.getElementById('pasteUrlBtn').addEventListener('click', () => this.pasteUrl());
         
         // Visualization controls
@@ -259,13 +362,96 @@ class WeatherRadarApp {
         });
     }
     
+    focusOnRadarSite() {
+        const siteCode = document.getElementById('radarSite').value;
+        const site = this.nexradSites.find(s => s.code === siteCode);
+        
+        if (site) {
+            // Fly to the radar site location
+            this.map.flyTo({
+                center: [site.lon, site.lat],
+                zoom: 8,
+                duration: 2000
+            });
+            
+            // Add radar site marker
+            this.clearRadarSiteMarkers();
+            new mapboxgl.Marker({ color: '#2563eb', scale: 1.2 })
+                .setLngLat([site.lon, site.lat])
+                .setPopup(new mapboxgl.Popup().setHTML(`
+                    <div style="color: #1e293b; padding: 8px;">
+                        <h4 style="margin: 0 0 8px 0; color: #0f172a;">${site.code} Radar</h4>
+                        <div><strong>Location:</strong> ${site.name}, ${site.state}</div>
+                        <div><strong>Elevation:</strong> ${site.elevation} ft</div>
+                        <div><strong>Coordinates:</strong> ${site.lat.toFixed(4)}°, ${site.lon.toFixed(4)}°</div>
+                    </div>
+                `))
+                .addTo(this.map);
+            
+            // Update location display
+            document.getElementById('locationText').textContent = `${site.name}, ${site.state}`;
+        }
+    }
+    
+    clearRadarSiteMarkers() {
+        // Remove existing radar site markers
+        const markers = document.querySelectorAll('.mapboxgl-marker[style*="rgb(37, 99, 235)"]');
+        markers.forEach(marker => marker.remove());
+    }
+    
+    async browseAvailableFiles() {
+        const siteCode = document.getElementById('radarSite').value;
+        const date = document.getElementById('dataDate').value;
+        
+        if (!siteCode || !date) {
+            this.showToast('Please select a radar site and date first', 'warning');
+            return;
+        }
+        
+        this.showToast('Browsing available files...', 'info');
+        
+        try {
+            // This would typically call an API endpoint that lists available files
+            // For now, we'll simulate this functionality
+            const product = document.getElementById('radarProduct').value || 'N0B';
+            const baseUrl = this.buildNEXRADUrl(siteCode, date, product);
+            
+            // In a real implementation, you'd fetch the S3 bucket listing
+            // For alpha testing, we'll just show the constructed URL
+            this.showToast(`Browse URL: ${baseUrl}`, 'info', 10000);
+            
+            // Copy URL to clipboard
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(baseUrl);
+                this.showToast('URL copied to clipboard', 'success');
+            }
+            
+        } catch (error) {
+            console.error('Error browsing files:', error);
+            this.showToast('Failed to browse available files', 'error');
+        }
+    }
+    
     async loadNEXRADData() {
-        const url = document.getElementById('nexradUrl').value;
+        let url = document.getElementById('nexradUrl').value;
         const loadBtn = document.getElementById('loadDataBtn');
         
+        // If no direct URL, build from site/date selection
         if (!url) {
-            this.showToast('Please enter a NEXRAD file URL', 'error');
-            return;
+            const siteCode = document.getElementById('radarSite').value;
+            const date = document.getElementById('dataDate').value;
+            
+            if (!siteCode || !date) {
+                this.showToast('Please select a radar site and date, or enter a direct URL', 'error');
+                return;
+            }
+            
+            const product = document.getElementById('radarProduct').value || 'N0B';
+            url = this.buildNEXRADUrl(siteCode, date, product);
+            
+            // For alpha testing, we'll need to handle the S3 prefix URL differently
+            // This is a browse URL, not a direct file URL
+            this.showToast('Note: This is a browse URL for alpha testing. You may need to select a specific file.', 'warning', 8000);
         }
         
         loadBtn.disabled = true;

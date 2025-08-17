@@ -1,6 +1,33 @@
 # WeatherRadar Pro - Changelog
 
-## Version 2.0.0 - Major UI/UX Overhaul (Latest)
+## Version 2.1.0-alpha - Alpha Testing Release (Latest)
+
+### 🧪 Alpha Testing Features
+- **Radar Site Selection**: Complete dropdown with 160+ NEXRAD sites organized by region
+- **Date Selection**: Date picker with current date default for browsing historical data
+- **S3 URL Builder**: Automatic URL construction using pattern `XXX_N0B_YYYY_MM_DD`
+- **File Browser**: "Browse Available Files" button to generate S3 browse URLs
+- **Site Focus**: Automatic map navigation to selected radar site locations
+- **Radar Site Markers**: Visual markers with detailed popup information
+- **Direct URL Support**: Manual URL entry for specific NEXRAD files
+- **Alpha Branding**: Clear alpha testing indicators throughout the interface
+
+### 🔧 Technical Improvements
+- **NEXRAD Sites Database**: Complete JSON database of all US NEXRAD sites with coordinates
+- **URL Pattern Handling**: Proper S3 browse URL generation for NOAA data access
+- **Site Grouping**: Radar sites organized by geographic regions for better UX
+- **Date Validation**: Current date initialization and proper date formatting
+- **Enhanced Error Handling**: Better feedback for alpha testing scenarios
+
+### 📍 NEXRAD Site Data
+- **Complete Coverage**: All 160+ NEXRAD sites with coordinates and metadata
+- **Regional Organization**: Sites grouped by regions (Northeast, Southeast, etc.)
+- **Site Information**: Name, state, elevation, and coordinates for each site
+- **Popular Sites**: FDR (Frederick, OK) set as default for testing
+
+---
+
+## Version 2.0.0 - Major UI/UX Overhaul
 
 ### 🎨 Complete UI Transformation
 - **Modern Professional Interface**: Redesigned with dark theme and sleek styling

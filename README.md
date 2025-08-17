@@ -1,15 +1,26 @@
-# WeatherRadar Pro 🌦️
+# WeatherRadar Pro 🌦️ (Alpha)
 
 A modern, professional web application for real-time NEXRAD weather radar visualization, designed with the same quality and features as WeatherWise and AtticRadar. Built with Python, Flask, and Mapbox GL JS with high-performance WebGL rendering.
 
+**🧪 Alpha Testing Phase:** This version includes advanced radar site selection and date browsing features for testing with live NEXRAD Level 3 data from NOAA's AWS S3 repository.
+
 ## 🌦️ Features
 
+### Core Features
 - **Real-time NEXRAD Data Processing**: Fetch and parse NEXRAD Level 3 files from NOAA's AWS S3 bucket
 - **WebGL Visualization**: High-performance rendering using Mapbox GL JS with WebGL
 - **Multiple Visualization Types**: Raster overlays and point-based visualizations
 - **RESTful API**: Clean API for processing and serving radar data
 - **Production Ready**: Docker containerization, Nginx reverse proxy, and caching
 - **Responsive Design**: Mobile-friendly web interface
+
+### Alpha Testing Features
+- **🎯 Radar Site Selection**: Choose from 160+ NEXRAD sites across the US
+- **📅 Date Selection**: Browse radar data by date with current date default
+- **🔍 File Browser**: Generate S3 URLs for specific radar products and dates
+- **🌐 Direct URL Support**: Enter specific NEXRAD file URLs manually
+- **📍 Site Focus**: Automatically fly to selected radar locations on map
+- **🏷️ Site Information**: Detailed radar site info with elevation and coordinates
 
 ## 🏗️ Architecture
 
@@ -172,6 +183,19 @@ The application can process NEXRAD Level 3 data from:
 - **NOAA AWS S3**: `https://unidata-nexrad-level3.s3.amazonaws.com/`
 - **Real-time feeds**: NEXRAD sites update every 4-6 minutes
 - **Historical data**: Archive data available through NOAA
+
+### Alpha Testing - NEXRAD URL Pattern
+For alpha testing, the application uses the S3 browse URL pattern:
+```
+https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=XXX_N0B_YYYY_MM_DD
+```
+
+Where:
+- `XXX` = 3-letter radar site code (e.g., `FDR` for Frederick, OK)
+- `N0B` = Product type (Base Reflectivity)
+- `YYYY_MM_DD` = Date (e.g., `2024_01_15`)
+
+**Example:** `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=FDR_N0B_2024_01_15`
 
 ### Supported Products:
 - **N0B**: Base Reflectivity (0.5°)

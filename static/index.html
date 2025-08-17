@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WeatherRadar Pro - Live NEXRAD Weather Visualization</title>
+    <title>WeatherRadar Pro (Alpha) - Live NEXRAD Weather Visualization</title>
     
     <!-- Mapbox GL JS -->
     <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
@@ -31,7 +31,7 @@
         <div class="loading-content">
             <div class="loading-logo">
                 <i class="fas fa-cloud-rain"></i>
-                <h1>WeatherRadar Pro</h1>
+                <h1>WeatherRadar Pro <span style="font-size: 0.6em; opacity: 0.7;">(Alpha)</span></h1>
             </div>
             <div class="loading-spinner">
                 <div class="spinner"></div>
@@ -47,7 +47,7 @@
             <div class="header-left">
                 <div class="logo">
                     <i class="fas fa-cloud-rain"></i>
-                    <span class="logo-text">WeatherRadar Pro</span>
+                    <span class="logo-text">WeatherRadar Pro <small style="opacity: 0.6;">Alpha</small></span>
                 </div>
             </div>
             
@@ -87,15 +87,31 @@
                 <!-- NEXRAD Data Source -->
                 <div class="control-section">
                     <h4><i class="fas fa-database"></i> Data Source</h4>
+                    
                     <div class="control-group">
-                        <label for="nexradUrl">NEXRAD File URL:</label>
+                        <label for="radarSite">Radar Site:</label>
+                        <select id="radarSite" class="form-select">
+                            <option value="">Select a radar site...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="dataDate">Date:</label>
+                        <input 
+                            type="date" 
+                            id="dataDate" 
+                            class="form-input"
+                        >
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="nexradUrl">Direct URL (Optional):</label>
                         <div class="input-group">
                             <input 
                                 type="url" 
                                 id="nexradUrl" 
                                 class="form-input"
-                                value="https://unidata-nexrad-level3.s3.amazonaws.com/FDR_N0B_2025_08_17_22_05_15"
-                                placeholder="Enter NEXRAD Level 3 file URL"
+                                placeholder="Or enter direct NEXRAD file URL"
                             >
                             <button id="pasteUrlBtn" class="btn-icon" title="Paste URL">
                                 <i class="fas fa-paste"></i>
@@ -107,6 +123,10 @@
                         <button id="loadDataBtn" class="btn btn-primary btn-block">
                             <i class="fas fa-download"></i>
                             Load Radar Data
+                        </button>
+                        <button id="browseDataBtn" class="btn btn-secondary btn-block" style="margin-top: 0.5rem;">
+                            <i class="fas fa-list"></i>
+                            Browse Available Files
                         </button>
                     </div>
                 </div>
@@ -398,17 +418,32 @@
             </div>
             <div class="modal-body">
                 <div class="help-section">
+                    <h4>🧪 Alpha Testing Notice</h4>
+                    <p><strong>This is an alpha version</strong> of WeatherRadar Pro. Some features may not work as expected. Please report any issues or feedback.</p>
+                    <p><strong>Data Source:</strong> NEXRAD Level 3 data is fetched from NOAA's AWS S3 bucket using the pattern: <code>XXX_N0B_YYYY_MM_DD</code> where XXX is the radar site code.</p>
+                </div>
+                <div class="help-section">
                     <h4>About NEXRAD Data</h4>
                     <p>NEXRAD (Next Generation Radar) is a network of 160 Doppler weather radars operated by the National Weather Service. This application visualizes Level 3 NEXRAD data products.</p>
                 </div>
                 <div class="help-section">
                     <h4>How to Use</h4>
                     <ol>
-                        <li>Enter a NEXRAD file URL or use the default sample</li>
-                        <li>Click "Load Radar Data" to process the data</li>
+                        <li>Select a radar site from the dropdown (e.g., FDR for Frederick, OK)</li>
+                        <li>Choose a date (defaults to today)</li>
+                        <li>Click "Load Radar Data" or "Browse Available Files"</li>
                         <li>Adjust visualization settings in the left panel</li>
                         <li>Use the timeline controls to animate data (when available)</li>
                     </ol>
+                </div>
+                <div class="help-section">
+                    <h4>Alpha Testing Features</h4>
+                    <ul>
+                        <li><strong>Radar Site Selection:</strong> Choose from 160+ NEXRAD sites</li>
+                        <li><strong>Date Selection:</strong> Browse data by date</li>
+                        <li><strong>Browse Files:</strong> Get S3 URLs for manual file selection</li>
+                        <li><strong>Direct URLs:</strong> Enter specific NEXRAD file URLs</li>
+                    </ul>
                 </div>
                 <div class="help-section">
                     <h4>Keyboard Shortcuts</h4>

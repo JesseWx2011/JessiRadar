@@ -1,26 +1,31 @@
-# WeatherRadar Pro v2.0 - Complete UI/UX Transformation
+# WeatherRadar Pro v2.1-alpha - Alpha Testing Release
 
 ## 🎯 Overview
-This PR transforms the basic NEXRAD visualization tool into a professional, modern web application similar to WeatherWise and AtticRadar. This is a major version upgrade that completely overhauls the user interface and adds numerous advanced features.
+This PR adds comprehensive alpha testing features to the professional NEXRAD visualization application, including radar site selection, date browsing, and S3 URL generation for testing with live NOAA data. This version is specifically designed for alpha testing with real NEXRAD Level 3 data.
 
-## 🌟 Key Features Added
+## 🌟 Key Alpha Testing Features Added
 
-### 🎨 Professional UI/UX
-- **Modern Dark Theme**: Professional color scheme with CSS custom properties
-- **Responsive Grid Layout**: Sidebar-based design that works on all devices  
-- **Interactive Control Panels**: Organized radar controls and data information
-- **Smooth Animations**: CSS transitions and loading animations throughout
-- **Toast Notifications**: Modern notification system for user feedback
-- **Modal Dialogs**: Settings and help panels with backdrop blur effects
+### 🧪 Alpha Testing Functionality
+- **Radar Site Selection**: Complete dropdown with 160+ NEXRAD sites organized by region
+- **Date Selection**: Date picker with current date default for browsing historical data  
+- **S3 URL Builder**: Automatic URL construction using NOAA's S3 pattern `XXX_N0B_YYYY_MM_DD`
+- **File Browser**: "Browse Available Files" button to generate S3 browse URLs
+- **Site Focus**: Automatic map navigation to selected radar site locations
+- **Radar Site Markers**: Visual markers with detailed popup information (elevation, coordinates)
+- **Direct URL Support**: Manual URL entry for specific NEXRAD files
+- **Alpha Branding**: Clear alpha testing indicators throughout the interface
 
-### 🚀 Advanced Functionality
-- **One-Click Launcher**: `python launch.py` starts everything automatically
-- **Real-time Status**: Live processing updates and data information display
-- **Interactive Map**: Click radar points for detailed popups with coordinates
-- **Keyboard Shortcuts**: Professional keyboard navigation (Space, arrows, F, L)
-- **Geolocation**: Auto-detect user location with proper permission handling
-- **Animation Timeline**: Play/pause/step controls for radar data playback
-- **Layer Management**: Toggle map layers (counties, cities, highways)
+### 🗂️ NEXRAD Sites Database
+- **Complete Coverage**: All 160+ NEXRAD sites with coordinates and metadata
+- **Regional Organization**: Sites grouped by regions (Northeast, Southeast, Mountain West, etc.)
+- **Site Information**: Name, state, elevation, and coordinates for each site
+- **Popular Sites**: FDR (Frederick, OK) set as default for testing
+
+### 🔧 Enhanced Technical Features
+- **URL Pattern Handling**: Proper S3 browse URL generation for NOAA data access
+- **Date Validation**: Current date initialization and proper date formatting
+- **Enhanced Error Handling**: Better feedback for alpha testing scenarios
+- **Site Grouping**: Radar sites organized by geographic regions for better UX
 
 ### 📱 Mobile & Accessibility
 - **Fully Responsive**: Works perfectly on phones, tablets, and desktops
