@@ -1,3 +1,13 @@
+# WeatherRadar Pro 🌦️ (Alpha)
+
+A modern, professional web application for real-time NEXRAD weather radar visualization, designed with the same quality and features as WeatherWise and AtticRadar. Built with Python, Flask, and Mapbox GL JS with high-performance WebGL rendering.
+
+**🧪 Alpha Testing Phase:** This version includes advanced radar site selection and date browsing features for testing with live NEXRAD Level 3 data from NOAA's AWS S3 repository.
+
+## 🌦️ Features
+
+### Core Features
+=======
 # NEXRAD Weather Radar Web Visualization
 
 A complete solution for fetching, processing, and visualizing NEXRAD Level 3 weather radar data on the web using Python, Flask, and Mapbox GL JS with WebGL rendering.
@@ -11,6 +21,15 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
 - **Production Ready**: Docker containerization, Nginx reverse proxy, and caching
 - **Responsive Design**: Mobile-friendly web interface
 
+### Alpha Testing Features
+- **🎯 Radar Site Selection**: Choose from 160+ NEXRAD sites across the US
+- **📅 Date Selection**: Browse radar data by date with current date default
+- **🔍 File Browser**: Generate S3 URLs for specific radar products and dates
+- **🌐 Direct URL Support**: Enter specific NEXRAD file URLs manually
+- **📍 Site Focus**: Automatically fly to selected radar locations on map
+- **🏷️ Site Information**: Detailed radar site info with elevation and coordinates
+
+=======
 ## 🏗️ Architecture
 
 ```
@@ -28,6 +47,28 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
 
 ## 🚀 Quick Start
 
+### Option 1: One-Click Launcher (Easiest)
+
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements-api.txt
+   ```
+
+2. **Launch the application:**
+   ```bash
+   python launch.py
+   ```
+
+3. **That's it!** The application will automatically:
+   - Start the API server
+   - Start the web server
+   - Open your browser to http://localhost:8000
+   - Display usage instructions
+
+### Option 2: Docker Compose (Production)
+
+1. **Run with Docker:**
+=======
 ### Option 1: Docker Compose (Recommended)
 
 1. **Clone and setup:**
@@ -42,15 +83,23 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
    - Edit `static/nexrad-web.js` and replace `'pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGZkZjk4YjEwMDAwM3FxcW1raGc4NTdhIn0.example'` with your actual token
 
 3. **Run with Docker:**
+
    ```bash
    docker-compose up -d
    ```
 
+2. **Access the application:**
+   - Open http://localhost in your browser
+   - API documentation: http://localhost/api
+
+### Option 3: Manual Setup (Development)
+=======
 4. **Access the application:**
    - Open http://localhost in your browser
    - API documentation: http://localhost/api
 
 ### Option 2: Local Development
+
 
 1. **Install Python dependencies:**
    ```bash
@@ -62,6 +111,9 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
    python nexrad_api.py
    ```
 
+3. **Serve the frontend (in another terminal):**
+   ```bash
+=======
 3. **Serve the frontend:**
    ```bash
    # Simple HTTP server
@@ -76,7 +128,10 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
 ## 📁 Project Structure
 
 ```
+weatherradar-pro/
+=======
 nexrad-weather-radar/
+
 ├── nexrad_processor.py      # Core NEXRAD data processing
 ├── nexrad_api.py           # Flask API server
 ├── requirements.txt        # Python dependencies (standalone)
@@ -84,9 +139,16 @@ nexrad-weather-radar/
 ├── Dockerfile              # API server container
 ├── docker-compose.yml      # Complete deployment
 ├── nginx.conf              # Nginx configuration
+├── launch.py               # One-click launcher script
+├── static/
+│   ├── index.html          # Modern web interface
+│   ├── styles.css          # Professional styling
+│   └── app.js              # Advanced JavaScript application
+=======
 ├── static/
 │   ├── index.html          # Web interface
 │   └── nexrad-web.js       # Frontend JavaScript
+
 └── README.md               # This file
 ```
 
@@ -164,6 +226,21 @@ The application can process NEXRAD Level 3 data from:
 - **NOAA AWS S3**: `https://unidata-nexrad-level3.s3.amazonaws.com/`
 - **Real-time feeds**: NEXRAD sites update every 4-6 minutes
 - **Historical data**: Archive data available through NOAA
+
+### Alpha Testing - NEXRAD URL Pattern
+For alpha testing, the application uses the S3 browse URL pattern:
+```
+https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=XXX_N0B_YYYY_MM_DD
+```
+
+Where:
+- `XXX` = 3-letter radar site code (e.g., `FDR` for Frederick, OK)
+- `N0B` = Product type (Base Reflectivity)
+- `YYYY_MM_DD` = Date (e.g., `2024_01_15`)
+
+**Example:** `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=FDR_N0B_2024_01_15`
+
+=======
 
 ### Supported Products:
 - **N0B**: Base Reflectivity (0.5°)

@@ -1,0 +1,1273 @@
+{
+  "nexrad_sites": [
+    {
+      "code": "FDR",
+      "name": "Frederick, OK",
+      "state": "Oklahoma",
+      "lat": 34.3622,
+      "lon": -99.0285,
+      "elevation": 1287,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KABR",
+      "name": "Aberdeen, SD",
+      "state": "South Dakota",
+      "lat": 45.4558,
+      "lon": -98.4132,
+      "elevation": 1302,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KAMA",
+      "name": "Amarillo, TX",
+      "state": "Texas",
+      "lat": 35.2334,
+      "lon": -101.7092,
+      "elevation": 3587,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KAMX",
+      "name": "Miami, FL",
+      "state": "Florida",
+      "lat": 25.6111,
+      "lon": -80.4128,
+      "elevation": 14,
+      "region": "Southeast"
+    },
+    {
+      "code": "KAPX",
+      "name": "Gaylord, MI",
+      "state": "Michigan",
+      "lat": 44.9073,
+      "lon": -84.7198,
+      "elevation": 1464,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KARX",
+      "name": "La Crosse, WI",
+      "state": "Wisconsin",
+      "lat": 43.8228,
+      "lon": -91.1917,
+      "elevation": 1276,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KATX",
+      "name": "Seattle/Tacoma, WA",
+      "state": "Washington",
+      "lat": 48.1947,
+      "lon": -122.4958,
+      "elevation": 494,
+      "region": "Pacific Northwest"
+    },
+    {
+      "code": "KBBX",
+      "name": "Beale AFB, CA",
+      "state": "California",
+      "lat": 39.4962,
+      "lon": -121.6317,
+      "elevation": 173,
+      "region": "West Coast"
+    },
+    {
+      "code": "KBGM",
+      "name": "Binghamton, NY",
+      "state": "New York",
+      "lat": 42.1997,
+      "lon": -75.9847,
+      "elevation": 1606,
+      "region": "Northeast"
+    },
+    {
+      "code": "KBHX",
+      "name": "Eureka, CA",
+      "state": "California",
+      "lat": 40.4986,
+      "lon": -124.2919,
+      "elevation": 2402,
+      "region": "West Coast"
+    },
+    {
+      "code": "KBIS",
+      "name": "Bismarck, ND",
+      "state": "North Dakota",
+      "lat": 46.7709,
+      "lon": -100.7606,
+      "elevation": 1658,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KBLX",
+      "name": "Billings, MT",
+      "state": "Montana",
+      "lat": 45.8537,
+      "lon": -108.6067,
+      "elevation": 3598,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KBMX",
+      "name": "Birmingham, AL",
+      "state": "Alabama",
+      "lat": 33.1722,
+      "lon": -86.7698,
+      "elevation": 645,
+      "region": "Southeast"
+    },
+    {
+      "code": "KBOX",
+      "name": "Boston, MA",
+      "state": "Massachusetts",
+      "lat": 41.9559,
+      "lon": -71.1373,
+      "elevation": 118,
+      "region": "Northeast"
+    },
+    {
+      "code": "KBRO",
+      "name": "Brownsville, TX",
+      "state": "Texas",
+      "lat": 25.916,
+      "lon": -97.4189,
+      "elevation": 23,
+      "region": "South Texas"
+    },
+    {
+      "code": "KBUF",
+      "name": "Buffalo, NY",
+      "state": "New York",
+      "lat": 42.9488,
+      "lon": -78.7369,
+      "elevation": 693,
+      "region": "Northeast"
+    },
+    {
+      "code": "KBYX",
+      "name": "Key West, FL",
+      "state": "Florida",
+      "lat": 24.5974,
+      "lon": -81.7032,
+      "elevation": 8,
+      "region": "Southeast"
+    },
+    {
+      "code": "KCAE",
+      "name": "Columbia, SC",
+      "state": "South Carolina",
+      "lat": 33.9487,
+      "lon": -81.1184,
+      "elevation": 231,
+      "region": "Southeast"
+    },
+    {
+      "code": "KCBW",
+      "name": "Houlton, ME",
+      "state": "Maine",
+      "lat": 46.0394,
+      "lon": -67.8067,
+      "elevation": 746,
+      "region": "Northeast"
+    },
+    {
+      "code": "KCBX",
+      "name": "Boise, ID",
+      "state": "Idaho",
+      "lat": 43.4903,
+      "lon": -116.2361,
+      "elevation": 3061,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KCCX",
+      "name": "State College, PA",
+      "state": "Pennsylvania",
+      "lat": 40.9233,
+      "lon": -78.0036,
+      "elevation": 2405,
+      "region": "Northeast"
+    },
+    {
+      "code": "KCLE",
+      "name": "Cleveland, OH",
+      "state": "Ohio",
+      "lat": 41.4131,
+      "lon": -81.8597,
+      "elevation": 763,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KCLX",
+      "name": "Charleston, SC",
+      "state": "South Carolina",
+      "lat": 32.6556,
+      "lon": -81.0422,
+      "elevation": 97,
+      "region": "Southeast"
+    },
+    {
+      "code": "KCRP",
+      "name": "Corpus Christi, TX",
+      "state": "Texas",
+      "lat": 27.7842,
+      "lon": -97.5111,
+      "elevation": 45,
+      "region": "South Texas"
+    },
+    {
+      "code": "KCXX",
+      "name": "Burlington, VT",
+      "state": "Vermont",
+      "lat": 44.5111,
+      "lon": -73.1667,
+      "elevation": 317,
+      "region": "Northeast"
+    },
+    {
+      "code": "KCYS",
+      "name": "Cheyenne, WY",
+      "state": "Wyoming",
+      "lat": 41.1519,
+      "lon": -104.8061,
+      "elevation": 6128,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KDAX",
+      "name": "Sacramento, CA",
+      "state": "California",
+      "lat": 38.5011,
+      "lon": -121.6778,
+      "elevation": 30,
+      "region": "West Coast"
+    },
+    {
+      "code": "KDDC",
+      "name": "Dodge City, KS",
+      "state": "Kansas",
+      "lat": 37.7608,
+      "lon": -99.9689,
+      "elevation": 2590,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KDFX",
+      "name": "Laughlin AFB, TX",
+      "state": "Texas",
+      "lat": 29.2728,
+      "lon": -100.2803,
+      "elevation": 1131,
+      "region": "South Texas"
+    },
+    {
+      "code": "KDGX",
+      "name": "Brandon, MS",
+      "state": "Mississippi",
+      "lat": 32.2803,
+      "lon": -89.9844,
+      "elevation": 458,
+      "region": "Southeast"
+    },
+    {
+      "code": "KDIX",
+      "name": "Philadelphia, PA",
+      "state": "Pennsylvania",
+      "lat": 39.9469,
+      "lon": -74.4111,
+      "elevation": 149,
+      "region": "Northeast"
+    },
+    {
+      "code": "KDLH",
+      "name": "Duluth, MN",
+      "state": "Minnesota",
+      "lat": 46.8372,
+      "lon": -92.2097,
+      "elevation": 1428,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KDMX",
+      "name": "Des Moines, IA",
+      "state": "Iowa",
+      "lat": 41.7311,
+      "lon": -93.7231,
+      "elevation": 981,
+      "region": "Midwest"
+    },
+    {
+      "code": "KDOX",
+      "name": "Dover AFB, DE",
+      "state": "Delaware",
+      "lat": 38.8256,
+      "lon": -75.44,
+      "elevation": 50,
+      "region": "Northeast"
+    },
+    {
+      "code": "KDTX",
+      "name": "Detroit, MI",
+      "state": "Michigan",
+      "lat": 42.6997,
+      "lon": -83.4719,
+      "elevation": 1072,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KDVN",
+      "name": "Davenport, IA",
+      "state": "Iowa",
+      "lat": 41.6117,
+      "lon": -90.5808,
+      "elevation": 754,
+      "region": "Midwest"
+    },
+    {
+      "code": "KDYX",
+      "name": "Dyess AFB, TX",
+      "state": "Texas",
+      "lat": 32.5386,
+      "lon": -99.2544,
+      "elevation": 1517,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KEAX",
+      "name": "Kansas City, MO",
+      "state": "Missouri",
+      "lat": 38.8103,
+      "lon": -94.2644,
+      "elevation": 995,
+      "region": "Midwest"
+    },
+    {
+      "code": "KEMX",
+      "name": "Tucson, AZ",
+      "state": "Arizona",
+      "lat": 31.8936,
+      "lon": -110.6303,
+      "elevation": 5202,
+      "region": "Southwest"
+    },
+    {
+      "code": "KENX",
+      "name": "Albany, NY",
+      "state": "New York",
+      "lat": 42.5864,
+      "lon": -74.0639,
+      "elevation": 1826,
+      "region": "Northeast"
+    },
+    {
+      "code": "KEOX",
+      "name": "Fort Rucker, AL",
+      "state": "Alabama",
+      "lat": 31.4606,
+      "lon": -85.4594,
+      "elevation": 434,
+      "region": "Southeast"
+    },
+    {
+      "code": "KEPZ",
+      "name": "El Paso, TX",
+      "state": "Texas",
+      "lat": 31.8731,
+      "lon": -106.6975,
+      "elevation": 4104,
+      "region": "Southwest"
+    },
+    {
+      "code": "KESX",
+      "name": "Las Vegas, NV",
+      "state": "Nevada",
+      "lat": 35.7011,
+      "lon": -114.8919,
+      "elevation": 4867,
+      "region": "Southwest"
+    },
+    {
+      "code": "KEVX",
+      "name": "Eglin AFB, FL",
+      "state": "Florida",
+      "lat": 30.5644,
+      "lon": -85.9214,
+      "elevation": 140,
+      "region": "Southeast"
+    },
+    {
+      "code": "KEWX",
+      "name": "Austin/San Antonio, TX",
+      "state": "Texas",
+      "lat": 29.7039,
+      "lon": -98.0286,
+      "elevation": 633,
+      "region": "South Texas"
+    },
+    {
+      "code": "KEYX",
+      "name": "Edwards AFB, CA",
+      "state": "California",
+      "lat": 35.0978,
+      "lon": -117.5608,
+      "elevation": 2757,
+      "region": "West Coast"
+    },
+    {
+      "code": "KFCX",
+      "name": "Roanoke, VA",
+      "state": "Virginia",
+      "lat": 37.0242,
+      "lon": -80.2742,
+      "elevation": 2969,
+      "region": "Southeast"
+    },
+    {
+      "code": "KFDR",
+      "name": "Altus AFB, OK",
+      "state": "Oklahoma",
+      "lat": 34.3622,
+      "lon": -99.0285,
+      "elevation": 1287,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KFDX",
+      "name": "Cannon AFB, NM",
+      "state": "New Mexico",
+      "lat": 34.6347,
+      "lon": -103.6186,
+      "elevation": 4650,
+      "region": "Southwest"
+    },
+    {
+      "code": "KFFC",
+      "name": "Atlanta, GA",
+      "state": "Georgia",
+      "lat": 33.3636,
+      "lon": -84.5658,
+      "elevation": 858,
+      "region": "Southeast"
+    },
+    {
+      "code": "KFSD",
+      "name": "Sioux Falls, SD",
+      "state": "South Dakota",
+      "lat": 43.5878,
+      "lon": -96.7294,
+      "elevation": 1430,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KFSX",
+      "name": "Flagstaff, AZ",
+      "state": "Arizona",
+      "lat": 34.5744,
+      "lon": -111.1983,
+      "elevation": 7220,
+      "region": "Southwest"
+    },
+    {
+      "code": "KFTG",
+      "name": "Denver, CO",
+      "state": "Colorado",
+      "lat": 39.7867,
+      "lon": -104.5458,
+      "elevation": 5497,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KFWS",
+      "name": "Dallas/Fort Worth, TX",
+      "state": "Texas",
+      "lat": 32.5731,
+      "lon": -97.3031,
+      "elevation": 683,
+      "region": "North Texas"
+    },
+    {
+      "code": "KGGW",
+      "name": "Glasgow, MT",
+      "state": "Montana",
+      "lat": 48.2067,
+      "lon": -106.6253,
+      "elevation": 2276,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KGJX",
+      "name": "Grand Junction, CO",
+      "state": "Colorado",
+      "lat": 39.0619,
+      "lon": -108.2136,
+      "elevation": 9992,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KGLD",
+      "name": "Goodland, KS",
+      "state": "Kansas",
+      "lat": 39.3667,
+      "lon": -101.7,
+      "elevation": 3651,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KGRB",
+      "name": "Green Bay, WI",
+      "state": "Wisconsin",
+      "lat": 44.4983,
+      "lon": -88.1111,
+      "elevation": 682,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KGRK",
+      "name": "Fort Hood, TX",
+      "state": "Texas",
+      "lat": 30.7217,
+      "lon": -97.3831,
+      "elevation": 538,
+      "region": "Central Texas"
+    },
+    {
+      "code": "KGRR",
+      "name": "Grand Rapids, MI",
+      "state": "Michigan",
+      "lat": 42.8939,
+      "lon": -85.5449,
+      "elevation": 778,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KGSP",
+      "name": "Greer, SC",
+      "state": "South Carolina",
+      "lat": 34.8833,
+      "lon": -82.22,
+      "elevation": 940,
+      "region": "Southeast"
+    },
+    {
+      "code": "KGWX",
+      "name": "Columbus AFB, MS",
+      "state": "Mississippi",
+      "lat": 33.8967,
+      "lon": -88.3292,
+      "elevation": 476,
+      "region": "Southeast"
+    },
+    {
+      "code": "KGYX",
+      "name": "Portland, ME",
+      "state": "Maine",
+      "lat": 43.8914,
+      "lon": -70.2564,
+      "elevation": 409,
+      "region": "Northeast"
+    },
+    {
+      "code": "KHDX",
+      "name": "Holloman AFB, NM",
+      "state": "New Mexico",
+      "lat": 33.0769,
+      "lon": -106.1225,
+      "elevation": 4222,
+      "region": "Southwest"
+    },
+    {
+      "code": "KHGX",
+      "name": "Houston, TX",
+      "state": "Texas",
+      "lat": 29.4719,
+      "lon": -95.0792,
+      "elevation": 18,
+      "region": "Southeast Texas"
+    },
+    {
+      "code": "KHNX",
+      "name": "San Joaquin Valley, CA",
+      "state": "California",
+      "lat": 36.3142,
+      "lon": -119.6317,
+      "elevation": 74,
+      "region": "West Coast"
+    },
+    {
+      "code": "KHPX",
+      "name": "Fort Campbell, KY",
+      "state": "Kentucky",
+      "lat": 36.7367,
+      "lon": -87.285,
+      "elevation": 576,
+      "region": "Southeast"
+    },
+    {
+      "code": "KHTX",
+      "name": "Huntsville, AL",
+      "state": "Alabama",
+      "lat": 34.9306,
+      "lon": -86.0833,
+      "elevation": 1760,
+      "region": "Southeast"
+    },
+    {
+      "code": "KHWX",
+      "name": "Shreveport, LA",
+      "state": "Louisiana",
+      "lat": 32.4503,
+      "lon": -93.5417,
+      "elevation": 392,
+      "region": "South Central"
+    },
+    {
+      "code": "KICT",
+      "name": "Wichita, KS",
+      "state": "Kansas",
+      "lat": 37.6544,
+      "lon": -97.4431,
+      "elevation": 1335,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KILX",
+      "name": "Lincoln, IL",
+      "state": "Illinois",
+      "lat": 40.1506,
+      "lon": -89.3367,
+      "elevation": 582,
+      "region": "Midwest"
+    },
+    {
+      "code": "KIND",
+      "name": "Indianapolis, IN",
+      "state": "Indiana",
+      "lat": 39.7075,
+      "lon": -86.2803,
+      "elevation": 790,
+      "region": "Midwest"
+    },
+    {
+      "code": "KINX",
+      "name": "Tulsa, OK",
+      "state": "Oklahoma",
+      "lat": 36.175,
+      "lon": -95.5644,
+      "elevation": 668,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KIWA",
+      "name": "Phoenix, AZ",
+      "state": "Arizona",
+      "lat": 33.2892,
+      "lon": -111.67,
+      "elevation": 1353,
+      "region": "Southwest"
+    },
+    {
+      "code": "KIWX",
+      "name": "North Webster, IN",
+      "state": "Indiana",
+      "lat": 41.3586,
+      "lon": -85.7,
+      "elevation": 960,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KJAX",
+      "name": "Jacksonville, FL",
+      "state": "Florida",
+      "lat": 30.4847,
+      "lon": -81.7019,
+      "elevation": 33,
+      "region": "Southeast"
+    },
+    {
+      "code": "KJGX",
+      "name": "Robins AFB, GA",
+      "state": "Georgia",
+      "lat": 32.675,
+      "lon": -83.3511,
+      "elevation": 521,
+      "region": "Southeast"
+    },
+    {
+      "code": "KJKL",
+      "name": "Jackson, KY",
+      "state": "Kentucky",
+      "lat": 37.5908,
+      "lon": -83.3131,
+      "elevation": 1364,
+      "region": "Southeast"
+    },
+    {
+      "code": "KLBB",
+      "name": "Lubbock, TX",
+      "state": "Texas",
+      "lat": 33.6539,
+      "lon": -101.8142,
+      "elevation": 3259,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KLCH",
+      "name": "Lake Charles, LA",
+      "state": "Louisiana",
+      "lat": 30.125,
+      "lon": -93.2161,
+      "elevation": 13,
+      "region": "South Central"
+    },
+    {
+      "code": "KLIX",
+      "name": "New Orleans, LA",
+      "state": "Louisiana",
+      "lat": 30.3367,
+      "lon": -89.8256,
+      "elevation": 24,
+      "region": "South Central"
+    },
+    {
+      "code": "KLNX",
+      "name": "North Platte, NE",
+      "state": "Nebraska",
+      "lat": 41.9581,
+      "lon": -100.5758,
+      "elevation": 2970,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KLOT",
+      "name": "Chicago, IL",
+      "state": "Illinois",
+      "lat": 41.6044,
+      "lon": -88.0844,
+      "elevation": 663,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KLRX",
+      "name": "Elko, NV",
+      "state": "Nevada",
+      "lat": 40.74,
+      "lon": -116.8028,
+      "elevation": 7056,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KLSX",
+      "name": "St. Louis, MO",
+      "state": "Missouri",
+      "lat": 38.6986,
+      "lon": -90.6828,
+      "elevation": 608,
+      "region": "Midwest"
+    },
+    {
+      "code": "KLTX",
+      "name": "Wilmington, NC",
+      "state": "North Carolina",
+      "lat": 33.9894,
+      "lon": -78.4289,
+      "elevation": 64,
+      "region": "Southeast"
+    },
+    {
+      "code": "KLVX",
+      "name": "Louisville, KY",
+      "state": "Kentucky",
+      "lat": 37.9753,
+      "lon": -85.9439,
+      "elevation": 719,
+      "region": "Southeast"
+    },
+    {
+      "code": "KLWX",
+      "name": "Sterling, VA",
+      "state": "Virginia",
+      "lat": 38.9753,
+      "lon": -77.4778,
+      "elevation": 272,
+      "region": "Mid-Atlantic"
+    },
+    {
+      "code": "KLZK",
+      "name": "Little Rock, AR",
+      "state": "Arkansas",
+      "lat": 34.8364,
+      "lon": -92.2622,
+      "elevation": 568,
+      "region": "South Central"
+    },
+    {
+      "code": "KMAF",
+      "name": "Midland/Odessa, TX",
+      "state": "Texas",
+      "lat": 31.9433,
+      "lon": -102.1894,
+      "elevation": 2868,
+      "region": "West Texas"
+    },
+    {
+      "code": "KMAX",
+      "name": "Medford, OR",
+      "state": "Oregon",
+      "lat": 42.0811,
+      "lon": -122.7178,
+      "elevation": 7513,
+      "region": "Pacific Northwest"
+    },
+    {
+      "code": "KMBX",
+      "name": "Minot AFB, ND",
+      "state": "North Dakota",
+      "lat": 48.3925,
+      "lon": -100.8644,
+      "elevation": 1493,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KMHX",
+      "name": "Morehead City, NC",
+      "state": "North Carolina",
+      "lat": 34.7761,
+      "lon": -76.8761,
+      "elevation": 31,
+      "region": "Southeast"
+    },
+    {
+      "code": "KMKX",
+      "name": "Milwaukee, WI",
+      "state": "Wisconsin",
+      "lat": 42.9678,
+      "lon": -88.5506,
+      "elevation": 958,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KMLB",
+      "name": "Melbourne, FL",
+      "state": "Florida",
+      "lat": 28.1133,
+      "lon": -80.6542,
+      "elevation": 35,
+      "region": "Southeast"
+    },
+    {
+      "code": "KMOB",
+      "name": "Mobile, AL",
+      "state": "Alabama",
+      "lat": 30.6794,
+      "lon": -88.24,
+      "elevation": 208,
+      "region": "Southeast"
+    },
+    {
+      "code": "KMPX",
+      "name": "Minneapolis, MN",
+      "state": "Minnesota",
+      "lat": 44.8489,
+      "lon": -93.5656,
+      "elevation": 946,
+      "region": "Upper Midwest"
+    },
+    {
+      "code": "KMQT",
+      "name": "Marquette, MI",
+      "state": "Michigan",
+      "lat": 46.5311,
+      "lon": -87.5489,
+      "elevation": 1411,
+      "region": "Great Lakes"
+    },
+    {
+      "code": "KMRX",
+      "name": "Knoxville, TN",
+      "state": "Tennessee",
+      "lat": 36.1686,
+      "lon": -83.4017,
+      "elevation": 1337,
+      "region": "Southeast"
+    },
+    {
+      "code": "KMSX",
+      "name": "Missoula, MT",
+      "state": "Montana",
+      "lat": 47.0414,
+      "lon": -113.9864,
+      "elevation": 7855,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KMTX",
+      "name": "Salt Lake City, UT",
+      "state": "Utah",
+      "lat": 41.2628,
+      "lon": -112.4461,
+      "elevation": 6748,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KMUX",
+      "name": "San Francisco, CA",
+      "state": "California",
+      "lat": 37.1553,
+      "lon": -121.8981,
+      "elevation": 3469,
+      "region": "West Coast"
+    },
+    {
+      "code": "KMVX",
+      "name": "Grand Forks, ND",
+      "state": "North Dakota",
+      "lat": 47.5278,
+      "lon": -97.3258,
+      "elevation": 986,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KMXX",
+      "name": "Maxwell AFB, AL",
+      "state": "Alabama",
+      "lat": 32.5367,
+      "lon": -85.79,
+      "elevation": 400,
+      "region": "Southeast"
+    },
+    {
+      "code": "KNKX",
+      "name": "San Diego, CA",
+      "state": "California",
+      "lat": 32.9189,
+      "lon": -117.0419,
+      "elevation": 955,
+      "region": "West Coast"
+    },
+    {
+      "code": "KNQA",
+      "name": "Millington, TN",
+      "state": "Tennessee",
+      "lat": 35.3447,
+      "lon": -89.8736,
+      "elevation": 282,
+      "region": "Southeast"
+    },
+    {
+      "code": "KOAX",
+      "name": "Omaha, NE",
+      "state": "Nebraska",
+      "lat": 41.3203,
+      "lon": -96.3667,
+      "elevation": 1148,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KOHX",
+      "name": "Nashville, TN",
+      "state": "Tennessee",
+      "lat": 36.2472,
+      "lon": -86.5625,
+      "elevation": 579,
+      "region": "Southeast"
+    },
+    {
+      "code": "KOKX",
+      "name": "New York City, NY",
+      "state": "New York",
+      "lat": 40.8656,
+      "lon": -72.8639,
+      "elevation": 85,
+      "region": "Northeast"
+    },
+    {
+      "code": "KOTX",
+      "name": "Spokane, WA",
+      "state": "Washington",
+      "lat": 47.6803,
+      "lon": -117.6267,
+      "elevation": 2384,
+      "region": "Pacific Northwest"
+    },
+    {
+      "code": "KPAH",
+      "name": "Paducah, KY",
+      "state": "Kentucky",
+      "lat": 37.0683,
+      "lon": -88.7717,
+      "elevation": 392,
+      "region": "Southeast"
+    },
+    {
+      "code": "KPBZ",
+      "name": "Pittsburgh, PA",
+      "state": "Pennsylvania",
+      "lat": 40.5317,
+      "lon": -80.2181,
+      "elevation": 1185,
+      "region": "Northeast"
+    },
+    {
+      "code": "KPDT",
+      "name": "Pendleton, OR",
+      "state": "Oregon",
+      "lat": 45.6906,
+      "lon": -118.8528,
+      "elevation": 1515,
+      "region": "Pacific Northwest"
+    },
+    {
+      "code": "KPOE",
+      "name": "Fort Polk, LA",
+      "state": "Louisiana",
+      "lat": 31.1556,
+      "lon": -92.9761,
+      "elevation": 124,
+      "region": "South Central"
+    },
+    {
+      "code": "KPUX",
+      "name": "Pueblo, CO",
+      "state": "Colorado",
+      "lat": 38.4595,
+      "lon": -104.1814,
+      "elevation": 5249,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KRAX",
+      "name": "Raleigh/Durham, NC",
+      "state": "North Carolina",
+      "lat": 35.6656,
+      "lon": -78.49,
+      "elevation": 348,
+      "region": "Southeast"
+    },
+    {
+      "code": "KRGX",
+      "name": "Reno, NV",
+      "state": "Nevada",
+      "lat": 39.7542,
+      "lon": -119.4622,
+      "elevation": 8445,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KRIW",
+      "name": "Riverton, WY",
+      "state": "Wyoming",
+      "lat": 43.0661,
+      "lon": -108.4769,
+      "elevation": 5434,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KRLX",
+      "name": "Charleston, WV",
+      "state": "West Virginia",
+      "lat": 38.3111,
+      "lon": -81.7228,
+      "elevation": 1196,
+      "region": "Mid-Atlantic"
+    },
+    {
+      "code": "KRMX",
+      "name": "Griffiss AFB, NY",
+      "state": "New York",
+      "lat": 43.4678,
+      "lon": -75.4581,
+      "elevation": 1514,
+      "region": "Northeast"
+    },
+    {
+      "code": "KRTX",
+      "name": "Portland, OR",
+      "state": "Oregon",
+      "lat": 45.715,
+      "lon": -122.9650,
+      "elevation": 1572,
+      "region": "Pacific Northwest"
+    },
+    {
+      "code": "KSFX",
+      "name": "Pocatello, ID",
+      "state": "Idaho",
+      "lat": 43.1058,
+      "lon": -112.6864,
+      "elevation": 4474,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KSGF",
+      "name": "Springfield, MO",
+      "state": "Missouri",
+      "lat": 37.2353,
+      "lon": -93.4006,
+      "elevation": 1278,
+      "region": "Midwest"
+    },
+    {
+      "code": "KSHV",
+      "name": "Shreveport, LA",
+      "state": "Louisiana",
+      "lat": 32.4503,
+      "lon": -93.8414,
+      "elevation": 273,
+      "region": "South Central"
+    },
+    {
+      "code": "KSJT",
+      "name": "San Angelo, TX",
+      "state": "Texas",
+      "lat": 31.3711,
+      "lon": -100.4925,
+      "elevation": 1893,
+      "region": "Central Texas"
+    },
+    {
+      "code": "KSOX",
+      "name": "Santa Ana Mountains, CA",
+      "state": "California",
+      "lat": 33.8178,
+      "lon": -117.6369,
+      "elevation": 3027,
+      "region": "West Coast"
+    },
+    {
+      "code": "KSRX",
+      "name": "Western Arkansas",
+      "state": "Arkansas",
+      "lat": 35.2906,
+      "lon": -94.3619,
+      "elevation": 2090,
+      "region": "South Central"
+    },
+    {
+      "code": "KTBW",
+      "name": "Tampa, FL",
+      "state": "Florida",
+      "lat": 27.7056,
+      "lon": -82.4017,
+      "elevation": 41,
+      "region": "Southeast"
+    },
+    {
+      "code": "KTFX",
+      "name": "Great Falls, MT",
+      "state": "Montana",
+      "lat": 47.4597,
+      "lon": -111.3856,
+      "elevation": 3714,
+      "region": "Mountain West"
+    },
+    {
+      "code": "KTLH",
+      "name": "Tallahassee, FL",
+      "state": "Florida",
+      "lat": 30.3975,
+      "lon": -84.3289,
+      "elevation": 63,
+      "region": "Southeast"
+    },
+    {
+      "code": "KTLX",
+      "name": "Oklahoma City, OK",
+      "state": "Oklahoma",
+      "lat": 35.3331,
+      "lon": -97.2778,
+      "elevation": 1213,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KTWX",
+      "name": "Topeka, KS",
+      "state": "Kansas",
+      "lat": 38.9969,
+      "lon": -96.2322,
+      "elevation": 1367,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KTYX",
+      "name": "Montague, NY",
+      "state": "New York",
+      "lat": 43.7556,
+      "lon": -75.68,
+      "elevation": 1846,
+      "region": "Northeast"
+    },
+    {
+      "code": "KUDX",
+      "name": "Rapid City, SD",
+      "state": "South Dakota",
+      "lat": 44.125,
+      "lon": -102.8297,
+      "elevation": 3016,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KUEX",
+      "name": "Hastings, NE",
+      "state": "Nebraska",
+      "lat": 40.3208,
+      "lon": -98.4419,
+      "elevation": 1976,
+      "region": "Northern Plains"
+    },
+    {
+      "code": "KVAX",
+      "name": "Moody AFB, GA",
+      "state": "Georgia",
+      "lat": 30.8903,
+      "lon": -83.0019,
+      "elevation": 178,
+      "region": "Southeast"
+    },
+    {
+      "code": "KVBX",
+      "name": "Vandenberg AFB, CA",
+      "state": "California",
+      "lat": 34.8383,
+      "lon": -120.3978,
+      "elevation": 376,
+      "region": "West Coast"
+    },
+    {
+      "code": "KVNX",
+      "name": "Vance AFB, OK",
+      "state": "Oklahoma",
+      "lat": 36.7406,
+      "lon": -98.1278,
+      "elevation": 1201,
+      "region": "Southern Plains"
+    },
+    {
+      "code": "KVTX",
+      "name": "Los Angeles, CA",
+      "state": "California",
+      "lat": 34.4119,
+      "lon": -119.1794,
+      "elevation": 2726,
+      "region": "West Coast"
+    },
+    {
+      "code": "KVWX",
+      "name": "Evansville, IN",
+      "state": "Indiana",
+      "lat": 38.2603,
+      "lon": -87.7247,
+      "elevation": 479,
+      "region": "Midwest"
+    },
+    {
+      "code": "KYUX",
+      "name": "Yuma, AZ",
+      "state": "Arizona",
+      "lat": 32.4953,
+      "lon": -114.6567,
+      "elevation": 174,
+      "region": "Southwest"
+    }
+  ]
+}
