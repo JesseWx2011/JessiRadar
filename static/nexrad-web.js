@@ -1,13 +1,9 @@
-/**
- * NEXRAD Weather Radar Visualization with Mapbox GL JS (Production Version)
- * Connects to the NEXRAD API backend for processing and displaying radar data
- */
+        mapboxgl.accessToken = 'pk.eyJ1Ijoid2VhdGhlciIsImEiOiJjbHAxbHNjdncwaDhvMmptcno1ZTdqNDJ0In0.pk.eyJ1IjoidHdhbGtlcjkyIiwiYSI6ImNtZDkwaHMwdTAyazkya3BzNXphYWI3a2kifQ.sWYO653OYlYHYc_wOHsd2A';
+
 
 class NEXRADWebVisualization {
     constructor() {
-        // Set your Mapbox access token here
-        mapboxgl.accessToken = 'pk.eyJ1Ijoid2VhdGhlciIsImEiOiJjbHAxbHNjdncwaDhvMmptcno1ZTdqNDJ0In0.iywE3NefjboFg11a11ON0Q';
-        
+        // Set your Mapbox access token here        
         this.map = null;
         this.currentJobId = null;
         this.radarLayers = [];
