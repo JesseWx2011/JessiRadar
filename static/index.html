@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXRAD Weather Radar Visualization</title>
+    
+    <!-- Mapbox GL JS -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .control-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #333;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .control-input:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+        
+        .btn {
+            background: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background: #106ebe;
+        }
+        
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status.success {
+            background: rgba(0, 128, 0, 0.2);
+            border: 1px solid #008000;
+        }
+        
+        .status.error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+        }
+        
+        .status.loading {
+            background: rgba(255, 165, 0, 0.2);
+            border: 1px solid #ffa500;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+        }
+        
+        .info-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .info-item {
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                left: 5px;
+                right: 5px;
+                top: 5px;
+                min-width: auto;
+                width: auto;
+            }
+            
+            .info-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label class="control-label">NEXRAD File URL:</label>
+            <input 
+                type="url" 
+                id="nexradUrl" 
+                class="control-input"
+                value="https://unidata-nexrad-level3.s3.amazonaws.com/FDR_N0B_2025_08_17_22_05_15"
+                placeholder="Enter NEXRAD Level 3 file URL"
+            >
+        </div>
+        
+        <div class="control-group">
+            <button id="loadData" class="btn">Load NEXRAD Data</button>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Visualization Type:</label>
+            <select id="vizType" class="control-input">
+                <option value="raster">Raster Overlay</option>
+                <option value="points">Point Data</option>
+                <option value="both">Both</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Opacity:</label>
+            <input 
+                type="range" 
+                id="opacity" 
+                class="control-input"
+                min="0" 
+                max="1" 
+                step="0.1" 
+                value="0.7"
+            >
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+    </div>
+    
+    <div class="info-panel">
+        <div class="info-title">NEXRAD Weather Radar</div>
+        <div class="info-item">Real-time weather radar visualization using Mapbox GL JS and WebGL</div>
+        <div class="info-item">Data: NOAA NEXRAD Level 3</div>
+        <div class="info-item">Reflectivity values in dBZ</div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-title">Reflectivity (dBZ)</div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: rgba(64, 224, 255, 0.8);"></div>
+            <span>Light (-10 to 5)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: rgba(0, 255, 0, 0.8);"></div>
+            <span>Moderate (5 to 20)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: rgba(255, 255, 0, 0.8);"></div>
+            <span>Heavy (20 to 35)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: rgba(255, 165, 0, 0.8);"></div>
+            <span>Very Heavy (35 to 50)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: rgba(255, 0, 0, 0.8);"></div>
+            <span>Extreme (50 to 65)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: rgba(255, 0, 255, 0.8);"></div>
+            <span>Exceptional (65+)</span>
+        </div>
+    </div>
+
+    <script src="nexrad-web.js"></script>
+</body>
+</html>
