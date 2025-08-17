@@ -1,6 +1,6 @@
-# NEXRAD Weather Radar Web Visualization
+# WeatherRadar Pro 🌦️
 
-A complete solution for fetching, processing, and visualizing NEXRAD Level 3 weather radar data on the web using Python, Flask, and Mapbox GL JS with WebGL rendering.
+A modern, professional web application for real-time NEXRAD weather radar visualization, designed with the same quality and features as WeatherWise and AtticRadar. Built with Python, Flask, and Mapbox GL JS with high-performance WebGL rendering.
 
 ## 🌦️ Features
 
@@ -28,29 +28,36 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
 
 ## 🚀 Quick Start
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: One-Click Launcher (Easiest)
 
-1. **Clone and setup:**
+1. **Install dependencies:**
    ```bash
-   git clone <your-repo>
-   cd nexrad-weather-radar
+   pip install -r requirements-api.txt
    ```
 
-2. **Get a Mapbox token:**
-   - Visit [Mapbox Account](https://account.mapbox.com/)
-   - Create a free account and get your access token
-   - Edit `static/nexrad-web.js` and replace `'pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGZkZjk4YjEwMDAwM3FxcW1raGc4NTdhIn0.example'` with your actual token
+2. **Launch the application:**
+   ```bash
+   python launch.py
+   ```
 
-3. **Run with Docker:**
+3. **That's it!** The application will automatically:
+   - Start the API server
+   - Start the web server
+   - Open your browser to http://localhost:8000
+   - Display usage instructions
+
+### Option 2: Docker Compose (Production)
+
+1. **Run with Docker:**
    ```bash
    docker-compose up -d
    ```
 
-4. **Access the application:**
+2. **Access the application:**
    - Open http://localhost in your browser
    - API documentation: http://localhost/api
 
-### Option 2: Local Development
+### Option 3: Manual Setup (Development)
 
 1. **Install Python dependencies:**
    ```bash
@@ -62,9 +69,8 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
    python nexrad_api.py
    ```
 
-3. **Serve the frontend:**
+3. **Serve the frontend (in another terminal):**
    ```bash
-   # Simple HTTP server
    cd static
    python -m http.server 8000
    ```
@@ -76,7 +82,7 @@ A complete solution for fetching, processing, and visualizing NEXRAD Level 3 wea
 ## 📁 Project Structure
 
 ```
-nexrad-weather-radar/
+weatherradar-pro/
 ├── nexrad_processor.py      # Core NEXRAD data processing
 ├── nexrad_api.py           # Flask API server
 ├── requirements.txt        # Python dependencies (standalone)
@@ -84,9 +90,11 @@ nexrad-weather-radar/
 ├── Dockerfile              # API server container
 ├── docker-compose.yml      # Complete deployment
 ├── nginx.conf              # Nginx configuration
+├── launch.py               # One-click launcher script
 ├── static/
-│   ├── index.html          # Web interface
-│   └── nexrad-web.js       # Frontend JavaScript
+│   ├── index.html          # Modern web interface
+│   ├── styles.css          # Professional styling
+│   └── app.js              # Advanced JavaScript application
 └── README.md               # This file
 ```
 
