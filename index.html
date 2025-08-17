@@ -141,6 +141,54 @@
             color: #d1d5db;
         }
         
+        .station-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 20px;
+        }
+        
+        .station-select {
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            background: rgba(15, 20, 25, 0.8);
+            color: #ffffff;
+            font-size: 13px;
+            min-width: 150px;
+            cursor: pointer;
+        }
+        
+        .station-select:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.2);
+        }
+        
+        .load-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            background: #1e40af;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .load-btn:hover:not(:disabled) {
+            background: #1d4ed8;
+        }
+        
+        .load-btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
         .nav-right {
             display: flex;
             align-items: center;
@@ -300,6 +348,10 @@
                 display: none;
             }
             
+            .station-selector {
+                display: none;
+            }
+            
             .nav-right {
                 gap: 10px;
             }
@@ -307,6 +359,22 @@
             .alerts-icon {
                 width: 32px;
                 height: 32px;
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .station-selector {
+                margin-left: 10px;
+            }
+            
+            .station-select {
+                min-width: 120px;
+                font-size: 12px;
+            }
+            
+            .load-btn {
+                padding: 6px 10px;
                 font-size: 12px;
             }
         }
@@ -347,6 +415,15 @@
                     Radar
                 </button>
             </div>
+            <div class="station-selector">
+                <select id="stationSelect" class="station-select">
+                    <option value="">Select Radar Station...</option>
+                </select>
+                <button id="loadStationData" class="load-btn" disabled>
+                    <i class="fas fa-download"></i>
+                    Load Data
+                </button>
+            </div>
         </div>
         
         <div class="nav-right">
@@ -376,6 +453,9 @@
             constructor() {
                 this.map = null;
                 this.currentData = null;
+                this.radarStations = [];
+                this.currentStation = null;
+                this.nexradData = null;
                 this.init();
             }
             
@@ -387,9 +467,10 @@
                     // Initialize controls
                     this.initControls();
                     
-                    // Load initial radar data after map is ready
+                    // Load radar stations and initial data
                     this.map.whenReady(async () => {
                         console.log('Map loaded successfully');
+                        await this.loadRadarStations();
                         await this.loadInitialRadarData();
                     });
                     
@@ -461,6 +542,300 @@
                 document.getElementById('alertsIcon').addEventListener('click', () => {
                     this.showStatus('Weather alerts coming soon!', 'success');
                 });
+            }
+            
+            async loadRadarStations() {
+                try {
+                    this.showStatus('Loading radar stations...', 'loading');
+                    
+                    const response = await fetch('https://api.weather.gov/radar/stations');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    this.radarStations = data.features || [];
+                    
+                    console.log(`Loaded ${this.radarStations.length} radar stations`);
+                    this.showStatus(`Loaded ${this.radarStations.length} radar stations`, 'success');
+                    
+                    // Populate station selector
+                    this.populateStationSelector();
+                    
+                    // Add radar station markers to the map
+                    this.addRadarStationMarkers();
+                    
+                } catch (error) {
+                    console.error('Error loading radar stations:', error);
+                    this.showStatus('Failed to load radar stations', 'error');
+                }
+            }
+            
+            populateStationSelector() {
+                const stationSelect = document.getElementById('stationSelect');
+                const loadBtn = document.getElementById('loadStationData');
+                
+                // Clear existing options
+                stationSelect.innerHTML = '<option value="">Select Radar Station...</option>';
+                
+                // Add station options
+                this.radarStations.forEach(station => {
+                    const properties = station.properties;
+                    if (properties && properties.identifier && properties.name) {
+                        const option = document.createElement('option');
+                        option.value = properties.identifier;
+                        option.textContent = `${properties.identifier} - ${properties.name}`;
+                        stationSelect.appendChild(option);
+                    }
+                });
+                
+                // Handle station selection
+                stationSelect.addEventListener('change', (e) => {
+                    const selectedStation = e.target.value;
+                    loadBtn.disabled = !selectedStation;
+                    
+                    if (selectedStation) {
+                        // Highlight the selected station on the map
+                        this.highlightSelectedStation(selectedStation);
+                    }
+                });
+                
+                // Handle load button click
+                loadBtn.addEventListener('click', () => {
+                    const selectedStation = stationSelect.value;
+                    if (selectedStation) {
+                        this.loadNEXRADData(selectedStation);
+                    }
+                });
+            }
+            
+            highlightSelectedStation(stationCode) {
+                // Remove previous highlight
+                if (this.highlightedStation) {
+                    this.map.removeLayer(this.highlightedStation);
+                }
+                
+                // Find and highlight the selected station
+                const station = this.radarStations.find(s => 
+                    s.properties.identifier === stationCode
+                );
+                
+                if (station) {
+                    const coordinates = station.geometry.coordinates;
+                    const [lon, lat] = coordinates;
+                    
+                    // Create highlight circle
+                    this.highlightedStation = L.circle([lat, lon], {
+                        radius: 15000, // 15 km highlight radius
+                        color: '#fbbf24',
+                        fillColor: '#fbbf24',
+                        fillOpacity: 0.2,
+                        weight: 3,
+                        dashArray: '5, 5'
+                    }).addTo(this.map);
+                    
+                    // Center map on the selected station
+                    this.map.setView([lat, lon], 8);
+                }
+            }
+            
+            addRadarStationMarkers() {
+                // Clear existing markers
+                if (this.radarMarkers) {
+                    this.radarMarkers.forEach(marker => this.map.removeLayer(marker));
+                }
+                this.radarMarkers = [];
+                
+                this.radarStations.forEach(station => {
+                    const properties = station.properties;
+                    const coordinates = station.geometry.coordinates;
+                    
+                    if (coordinates && coordinates.length >= 2) {
+                        const [lon, lat] = coordinates;
+                        
+                        // Create marker for radar station
+                        const marker = L.circleMarker([lat, lon], {
+                            radius: 6,
+                            fillColor: '#3b82f6',
+                            color: '#ffffff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).addTo(this.map);
+                        
+                        // Add popup with station info
+                        const popupContent = `
+                            <div style="text-align: center; min-width: 200px;">
+                                <strong>${properties.name || 'Unknown'}</strong><br>
+                                <small>${properties.identifier || 'N/A'}</small><br>
+                                <span style="color: #3b82f6;">● Radar Station</span><br>
+                                <button onclick="window.stormTracker.loadNEXRADData('${properties.identifier}')" 
+                                        style="margin-top: 8px; padding: 4px 8px; background: #1e40af; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    Load Data
+                                </button>
+                            </div>
+                        `;
+                        
+                        marker.bindPopup(popupContent);
+                        this.radarMarkers.push(marker);
+                    }
+                });
+            }
+            
+            async loadNEXRADData(stationCode) {
+                try {
+                    this.currentStation = stationCode;
+                    this.showStatus(`Loading NEXRAD data for ${stationCode}...`, 'loading');
+                    
+                    // Get current date in YYYY_MM_DD format
+                    const now = new Date();
+                    const dateStr = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
+                    
+                    // Fetch available NEXRAD files for the station and date
+                    const prefix = `${stationCode}_N0B_${dateStr}`;
+                    const s3Url = `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${prefix}`;
+                    
+                    console.log(`Fetching NEXRAD data from: ${s3Url}`);
+                    
+                    const response = await fetch(s3Url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const xmlText = await response.text();
+                    const availableFiles = this.parseS3XML(xmlText);
+                    
+                    if (availableFiles.length === 0) {
+                        throw new Error(`No NEXRAD files found for ${stationCode} on ${dateStr}`);
+                    }
+                    
+                    // Get the most recent file
+                    const latestFile = availableFiles[availableFiles.length - 1];
+                    console.log(`Latest file: ${latestFile}`);
+                    
+                    // Fetch and parse the NEXRAD data
+                    await this.fetchAndParseNEXRAD(latestFile);
+                    
+                    this.showStatus(`NEXRAD data loaded for ${stationCode}`, 'success');
+                    
+                } catch (error) {
+                    console.error('Error loading NEXRAD data:', error);
+                    this.showStatus(`Failed to load NEXRAD data: ${error.message}`, 'error');
+                }
+            }
+            
+            parseS3XML(xmlText) {
+                const files = [];
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                
+                const contents = xmlDoc.getElementsByTagName('Contents');
+                for (let i = 0; i < contents.length; i++) {
+                    const keyElement = contents[i].getElementsByTagName('Key')[0];
+                    if (keyElement && keyElement.textContent) {
+                        files.push(keyElement.textContent);
+                    }
+                }
+                
+                return files.sort(); // Sort chronologically
+            }
+            
+            async fetchAndParseNEXRAD(fileKey) {
+                try {
+                    const fileUrl = `https://unidata-nexrad-level3.s3.amazonaws.com/${fileKey}`;
+                    console.log(`Fetching NEXRAD file: ${fileUrl}`);
+                    
+                    const response = await fetch(fileUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    await this.parseNEXRADLevel3(arrayBuffer);
+                    
+                } catch (error) {
+                    console.error('Error fetching NEXRAD file:', error);
+                    throw error;
+                }
+            }
+            
+            async parseNEXRADLevel3(arrayBuffer) {
+                try {
+                    // This is a simplified parser for NEXRAD Level III data
+                    // In a production app, you'd want to use a proper NEXRAD parser library
+                    
+                    const dataView = new DataView(arrayBuffer);
+                    
+                    // Basic NEXRAD Level III header parsing
+                    const messageHeader = {
+                        messageSize: dataView.getUint32(0, false), // Big-endian
+                        messageType: dataView.getUint16(4, false),
+                        sequenceNumber: dataView.getUint16(6, false),
+                        julianDate: dataView.getUint16(8, false),
+                        milliseconds: dataView.getUint32(10, false)
+                    };
+                    
+                    console.log('NEXRAD Message Header:', messageHeader);
+                    
+                    // For now, create a simple visualization
+                    // In a real implementation, you'd parse the actual radar data
+                    this.createNEXRADVisualization();
+                    
+                } catch (error) {
+                    console.error('Error parsing NEXRAD data:', error);
+                    throw error;
+                }
+            }
+            
+            createNEXRADVisualization() {
+                // Clear existing NEXRAD visualization
+                if (this.nexradLayer) {
+                    this.map.removeLayer(this.nexradLayer);
+                }
+                
+                // Create a simple radar coverage visualization
+                if (this.currentStation) {
+                    // Find the station coordinates
+                    const station = this.radarStations.find(s => 
+                        s.properties.identifier === this.currentStation
+                    );
+                    
+                    if (station) {
+                        const coordinates = station.geometry.coordinates;
+                        const [lon, lat] = coordinates;
+                        
+                        // Create radar coverage circle (typical NEXRAD range is ~230 km)
+                        this.nexradLayer = L.circle([lat, lon], {
+                            radius: 230000, // 230 km in meters
+                            color: '#ef4444',
+                            fillColor: '#ef4444',
+                            fillOpacity: 0.1,
+                            weight: 2,
+                            dashArray: '10, 5'
+                        }).addTo(this.map);
+                        
+                        // Add intensity rings
+                        const intensityRings = [
+                            { radius: 50000, color: '#10b981', opacity: 0.3 },
+                            { radius: 100000, color: '#fbbf24', opacity: 0.2 },
+                            { radius: 150000, color: '#f97316', opacity: 0.15 },
+                            { radius: 200000, color: '#ef4444', opacity: 0.1 }
+                        ];
+                        
+                        intensityRings.forEach(ring => {
+                            L.circle([lat, lon], {
+                                radius: ring.radius,
+                                color: ring.color,
+                                fillColor: 'transparent',
+                                weight: 1,
+                                opacity: ring.opacity
+                            }).addTo(this.map);
+                        });
+                        
+                        // Center map on the selected station
+                        this.map.setView([lat, lon], 8);
+                    }
+                }
             }
             
             async loadInitialRadarData() {
@@ -607,7 +982,7 @@
         
         // Initialize the app when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new StormTrackerApp();
+            window.stormTracker = new StormTrackerApp();
         });
     </script>
 </body>
