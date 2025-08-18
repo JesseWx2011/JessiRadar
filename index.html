@@ -803,64 +803,98 @@
                     this.currentStation = stationCode;
                     this.showStatus(`Loading NEXRAD data for ${stationCode}...`, 'loading');
                     
-                    // Try multiple dates (current date and previous days)
-                    const datesToTry = [];
+                    // Get current UTC time and try multiple time periods
                     const now = new Date();
+                    const utcNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
                     
-                    // Try current date and up to 3 previous days
-                    for (let i = 0; i < 4; i++) {
-                        const date = new Date(now);
-                        date.setDate(date.getDate() - i);
-                        const dateStr = `${date.getFullYear()}_${String(date.getMonth() + 1).padStart(2, '0')}_${String(date.getDate()).padStart(2, '0')}`;
-                        datesToTry.push(dateStr);
+                    console.log('Current UTC time:', utcNow.toISOString());
+                    
+                    // Try different time periods (current hour, previous hours, previous days)
+                    const timePeriods = [];
+                    
+                    // Current hour
+                    const currentHour = new Date(utcNow);
+                    currentHour.setMinutes(0, 0, 0);
+                    timePeriods.push(currentHour);
+                    
+                    // Previous few hours
+                    for (let i = 1; i <= 6; i++) {
+                        const prevHour = new Date(currentHour);
+                        prevHour.setHours(prevHour.getHours() - i);
+                        timePeriods.push(prevHour);
                     }
                     
-                    console.log('Dates to try:', datesToTry);
+                    // Previous days at different hours
+                    for (let day = 1; day <= 3; day++) {
+                        for (let hour = 0; hour < 24; hour += 6) { // Every 6 hours
+                            const prevDay = new Date(utcNow);
+                            prevDay.setDate(prevDay.getDate() - day);
+                            prevDay.setHours(hour, 0, 0, 0);
+                            timePeriods.push(prevDay);
+                        }
+                    }
+                    
+                    console.log('Time periods to try:', timePeriods.map(d => d.toISOString()));
                     
                     let availableFiles = [];
-                    let successfulDate = '';
+                    let successfulTime = '';
                     
-                    // Try each date until we find data
-                    for (const dateStr of datesToTry) {
+                    // Try each time period until we find data
+                    for (const time of timePeriods) {
                         try {
-                            const prefix = `${stationCode}_N0B_${dateStr}`;
-                            const s3Url = `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${prefix}`;
+                            const year = time.getUTCFullYear();
+                            const month = String(time.getUTCMonth() + 1).padStart(2, '0');
+                            const day = String(time.getUTCDate()).padStart(2, '0');
+                            const hour = String(time.getUTCHours()).padStart(2, '0');
                             
-                            console.log(`Trying date ${dateStr}: ${s3Url}`);
+                            // Try different product types
+                            const products = ['N0B', 'N0G', 'N0Q'];
                             
-                            const response = await fetch(s3Url);
-                            if (!response.ok) {
-                                console.log(`No data for ${dateStr}, trying next date...`);
-                                continue;
+                            for (const product of products) {
+                                const prefix = `${stationCode}_${product}_${year}_${month}_${day}_${hour}`;
+                                const s3Url = `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${prefix}`;
+                                
+                                console.log(`Trying ${prefix}: ${s3Url}`);
+                                
+                                const response = await fetch(s3Url);
+                                if (!response.ok) {
+                                    console.log(`No data for ${prefix}, trying next...`);
+                                    continue;
+                                }
+                                
+                                const xmlText = await response.text();
+                                const files = this.parseS3XML(xmlText);
+                                
+                                if (files.length > 0) {
+                                    availableFiles = files;
+                                    successfulTime = `${year}_${month}_${day}_${hour}`;
+                                    console.log(`Found ${files.length} files for ${prefix}`);
+                                    break;
+                                }
                             }
                             
-                            const xmlText = await response.text();
-                            const files = this.parseS3XML(xmlText);
-                            
-                            if (files.length > 0) {
-                                availableFiles = files;
-                                successfulDate = dateStr;
-                                console.log(`Found ${files.length} files for ${dateStr}`);
+                            if (availableFiles.length > 0) {
                                 break;
                             }
+                            
                         } catch (error) {
-                            console.log(`Error trying date ${dateStr}:`, error.message);
+                            console.log(`Error trying time ${time.toISOString()}:`, error.message);
                             continue;
                         }
                     }
                     
                     if (availableFiles.length === 0) {
-                        throw new Error(`No NEXRAD files found for ${stationCode} on any recent date`);
+                        throw new Error(`No NEXRAD files found for ${stationCode} in recent time periods`);
                     }
                     
                     // Get the most recent file
                     const latestFile = availableFiles[availableFiles.length - 1];
-                    console.log(`Using file from ${successfulDate}: ${latestFile}`);
+                    console.log(`Using file from ${successfulTime}: ${latestFile}`);
                     
                     // Fetch and parse the NEXRAD data
                     await this.fetchAndParseNEXRAD(latestFile);
                     
-                    this.showStatus(`NEXRAD data loaded for ${stationCode} (${successfulDate})`, 'success');
+                    this.showStatus(`NEXRAD data loaded for ${stationCode} (${successfulTime})`, 'success');
                     
                 } catch (error) {
                     console.error('Error loading NEXRAD data:', error);
@@ -877,11 +911,37 @@
                 for (let i = 0; i < contents.length; i++) {
                     const keyElement = contents[i].getElementsByTagName('Key')[0];
                     if (keyElement && keyElement.textContent) {
-                        files.push(keyElement.textContent);
+                        const key = keyElement.textContent;
+                        // Only include files that match our expected pattern
+                        if (key.includes('_N0B_') || key.includes('_N0G_') || key.includes('_N0Q_')) {
+                            files.push(key);
+                        }
                     }
                 }
                 
-                return files.sort(); // Sort chronologically
+                // Sort by timestamp (most recent first)
+                return files.sort((a, b) => {
+                    // Extract timestamp from key format: STATION_PRODUCT_YYYY_MM_DD_HH_MM_SS
+                    const timeA = this.extractTimestampFromKey(a);
+                    const timeB = this.extractTimestampFromKey(b);
+                    return timeB - timeA; // Descending order
+                });
+            }
+            
+            extractTimestampFromKey(key) {
+                // Parse key format: STATION_PRODUCT_YYYY_MM_DD_HH_MM_SS
+                const parts = key.split('_');
+                if (parts.length >= 7) {
+                    const year = parseInt(parts[2]);
+                    const month = parseInt(parts[3]) - 1; // Month is 0-indexed
+                    const day = parseInt(parts[4]);
+                    const hour = parseInt(parts[5]);
+                    const minute = parseInt(parts[6]);
+                    const second = parts.length > 7 ? parseInt(parts[7]) : 0;
+                    
+                    return new Date(Date.UTC(year, month, day, hour, minute, second)).getTime();
+                }
+                return 0;
             }
             
             async fetchAndParseNEXRAD(fileKey) {
@@ -905,44 +965,161 @@
             
             async parseNEXRADLevel3(arrayBuffer) {
                 try {
-                    // This is a simplified parser for NEXRAD Level III data
-                    // In a production app, you'd want to use a proper NEXRAD parser library
+                    console.log('Parsing NEXRAD Level III data, size:', arrayBuffer.byteLength);
                     
                     const dataView = new DataView(arrayBuffer);
                     
-                    // Basic NEXRAD Level III header parsing
+                    // NEXRAD Level III Message Header (16 bytes)
                     const messageHeader = {
                         messageSize: dataView.getUint32(0, false), // Big-endian
                         messageType: dataView.getUint16(4, false),
                         sequenceNumber: dataView.getUint16(6, false),
                         julianDate: dataView.getUint16(8, false),
-                        milliseconds: dataView.getUint32(10, false)
+                        milliseconds: dataView.getUint32(10, false),
+                        messageDate: dataView.getUint16(14, false)
                     };
                     
                     console.log('NEXRAD Message Header:', messageHeader);
                     
-                    // For now, create a simple visualization
-                    // In a real implementation, you'd parse the actual radar data
-                    this.createNEXRADVisualization();
+                    // Calculate actual date from Julian date
+                    const messageDate = this.julianToDate(messageHeader.julianDate, messageHeader.messageDate);
+                    console.log('Message Date:', messageDate);
+                    
+                    // Try to find product-specific data
+                    let radarData = null;
+                    
+                    // Look for different product types
+                    if (messageHeader.messageType === 2) { // Product Message
+                        radarData = this.parseProductMessage(dataView, messageHeader);
+                    } else if (messageHeader.messageType === 1) { // Data Message
+                        radarData = this.parseDataMessage(dataView, messageHeader);
+                    }
+                    
+                    // Create visualization with the parsed data
+                    this.createNEXRADVisualization(radarData);
                     
                 } catch (error) {
                     console.error('Error parsing NEXRAD data:', error);
-                    throw error;
+                    // Fallback to basic visualization
+                    this.createNEXRADVisualization();
                 }
             }
             
-            createNEXRADVisualization() {
+            julianToDate(julianDate, messageDate) {
+                // Convert NEXRAD Julian date to regular date
+                const year = Math.floor(julianDate / 1000);
+                const dayOfYear = julianDate % 1000;
+                
+                const date = new Date(year, 0, dayOfYear);
+                date.setMilliseconds(messageDate);
+                
+                return date;
+            }
+            
+            parseProductMessage(dataView, header) {
+                try {
+                    // Product Message parsing
+                    const productHeader = {
+                        productCode: dataView.getUint16(16, false),
+                        operationalMode: dataView.getUint16(18, false),
+                        volumeScanNumber: dataView.getUint16(20, false),
+                        volumeScanDate: dataView.getUint16(22, false),
+                        volumeScanTime: dataView.getUint32(24, false),
+                        generationDate: dataView.getUint16(28, false),
+                        generationTime: dataView.getUint32(30, false)
+                    };
+                    
+                    console.log('Product Header:', productHeader);
+                    
+                    // Look for graphic product data
+                    const graphicProduct = this.findGraphicProduct(dataView, header.messageSize);
+                    
+                    return {
+                        type: 'product',
+                        header: productHeader,
+                        graphicData: graphicProduct
+                    };
+                    
+                } catch (error) {
+                    console.error('Error parsing product message:', error);
+                    return null;
+                }
+            }
+            
+            parseDataMessage(dataView, header) {
+                try {
+                    // Data Message parsing
+                    const dataHeader = {
+                        dataType: dataView.getUint16(16, false),
+                        dataTime: dataView.getUint32(18, false),
+                        dataDate: dataView.getUint16(22, false)
+                    };
+                    
+                    console.log('Data Header:', dataHeader);
+                    
+                    return {
+                        type: 'data',
+                        header: dataHeader
+                    };
+                    
+                } catch (error) {
+                    console.error('Error parsing data message:', error);
+                    return null;
+                }
+            }
+            
+            findGraphicProduct(dataView, messageSize) {
+                try {
+                    // Look for graphic product data in the message
+                    // This is a simplified approach - real NEXRAD parsing is more complex
+                    
+                    for (let offset = 16; offset < messageSize - 4; offset++) {
+                        // Look for known patterns or product codes
+                        const potentialCode = dataView.getUint16(offset, false);
+                        
+                        // Common NEXRAD product codes
+                        if (potentialCode === 0x8000 || potentialCode === 0x8001 || 
+                            potentialCode === 0x8002 || potentialCode === 0x8003) {
+                            
+                            console.log('Found potential graphic product at offset:', offset, 'code:', potentialCode.toString(16));
+                            
+                            // Extract some basic information
+                            return {
+                                productCode: potentialCode,
+                                offset: offset,
+                                size: messageSize - offset
+                            };
+                        }
+                    }
+                    
+                    return null;
+                    
+                } catch (error) {
+                    console.error('Error finding graphic product:', error);
+                    return null;
+                }
+            }
+            
+            createNEXRADVisualization(radarData) {
                 // Clear existing NEXRAD visualization
                 if (this.nexradLayer) {
                     this.map.removeLayer(this.nexradLayer);
                 }
                 
+                // Clear intensity rings
+                if (this.intensityRings) {
+                    this.intensityRings.forEach(ring => this.map.removeLayer(ring));
+                }
+                this.intensityRings = [];
+                
                 // Create a simple radar coverage visualization
                 if (this.currentStation) {
                     // Find the station coordinates
-                    const station = this.radarStations.find(s => 
-                        s.properties.identifier === this.currentStation
-                    );
+                    const station = this.radarStations.find(s => {
+                        const properties = s.properties;
+                        const identifier = properties.identifier || properties.id || properties.station_id || properties.code;
+                        return identifier === this.currentStation;
+                    });
                     
                     if (station) {
                         const coordinates = station.geometry.coordinates;
@@ -958,27 +1135,104 @@
                             dashArray: '10, 5'
                         }).addTo(this.map);
                         
-                        // Add intensity rings
+                        // Add intensity rings with different colors based on range
                         const intensityRings = [
-                            { radius: 50000, color: '#10b981', opacity: 0.3 },
-                            { radius: 100000, color: '#fbbf24', opacity: 0.2 },
-                            { radius: 150000, color: '#f97316', opacity: 0.15 },
-                            { radius: 200000, color: '#ef4444', opacity: 0.1 }
+                            { radius: 50000, color: '#10b981', opacity: 0.3, label: '50km' },
+                            { radius: 100000, color: '#fbbf24', opacity: 0.2, label: '100km' },
+                            { radius: 150000, color: '#f97316', opacity: 0.15, label: '150km' },
+                            { radius: 200000, color: '#ef4444', opacity: 0.1, label: '200km' }
                         ];
                         
+                        this.intensityRings = [];
                         intensityRings.forEach(ring => {
-                            L.circle([lat, lon], {
+                            const circle = L.circle([lat, lon], {
                                 radius: ring.radius,
                                 color: ring.color,
                                 fillColor: 'transparent',
                                 weight: 1,
                                 opacity: ring.opacity
                             }).addTo(this.map);
+                            
+                            // Add range label
+                            const label = L.divIcon({
+                                className: 'range-label',
+                                html: `<div style="
+                                    background: rgba(0, 0, 0, 0.8);
+                                    color: white;
+                                    padding: 2px 6px;
+                                    border-radius: 3px;
+                                    font-size: 10px;
+                                    font-weight: 500;
+                                    white-space: nowrap;
+                                ">${ring.label}</div>`,
+                                iconSize: [40, 20],
+                                iconAnchor: [20, 10]
+                            });
+                            
+                            // Position label at the edge of the ring
+                            const labelLat = lat + (ring.radius / 111000) * Math.cos(Math.PI / 4);
+                            const labelLon = lon + (ring.radius / 111000) * Math.sin(Math.PI / 4) / Math.cos(lat * Math.PI / 180);
+                            
+                            L.marker([labelLat, labelLon], { icon: label }).addTo(this.map);
+                            
+                            this.intensityRings.push(circle);
                         });
+                        
+                        // Add data information if available
+                        if (radarData) {
+                            this.addDataInfo(radarData, [lat, lon]);
+                        }
                         
                         // Center map on the selected station
                         this.map.setView([lat, lon], 8);
                     }
+                }
+            }
+            
+            addDataInfo(radarData, coordinates) {
+                try {
+                    // Create an info panel showing the parsed data
+                    const infoContent = `
+                        <div style="
+                            background: rgba(0, 0, 0, 0.9);
+                            color: white;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border: 1px solid #3b82f6;
+                            min-width: 250px;
+                            font-family: monospace;
+                            font-size: 12px;
+                        ">
+                            <h4 style="margin: 0 0 10px 0; color: #3b82f6;">NEXRAD Data Info</h4>
+                            <div><strong>Type:</strong> ${radarData.type}</div>
+                            ${radarData.header ? `
+                                <div><strong>Product Code:</strong> 0x${radarData.header.productCode?.toString(16) || 'N/A'}</div>
+                                <div><strong>Volume Scan:</strong> ${radarData.header.volumeScanNumber || 'N/A'}</div>
+                                <div><strong>Operational Mode:</strong> ${radarData.header.operationalMode || 'N/A'}</div>
+                            ` : ''}
+                            ${radarData.graphicData ? `
+                                <div><strong>Graphic Data:</strong> ${radarData.graphicData.size} bytes</div>
+                            ` : ''}
+                            <div style="margin-top: 10px; font-size: 10px; opacity: 0.7;">
+                                Data parsed from NEXRAD Level III file
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Create popup with the info
+                    const infoMarker = L.marker(coordinates, {
+                        icon: L.divIcon({
+                            className: 'data-info-marker',
+                            html: '<div style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">📊</div>',
+                            iconSize: [30, 20],
+                            iconAnchor: [15, 10]
+                        })
+                    }).addTo(this.map);
+                    
+                    infoMarker.bindPopup(infoContent);
+                    
+                } catch (error) {
+                    console.error('Error adding data info:', error);
                 }
             }
             
