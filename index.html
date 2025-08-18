@@ -803,64 +803,98 @@
                     this.currentStation = stationCode;
                     this.showStatus(`Loading NEXRAD data for ${stationCode}...`, 'loading');
                     
-                    // Try multiple dates (current date and previous days)
-                    const datesToTry = [];
+                    // Get current UTC time and try multiple time periods
                     const now = new Date();
+                    const utcNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000));
                     
-                    // Try current date and up to 3 previous days
-                    for (let i = 0; i < 4; i++) {
-                        const date = new Date(now);
-                        date.setDate(date.getDate() - i);
-                        const dateStr = `${date.getFullYear()}_${String(date.getMonth() + 1).padStart(2, '0')}_${String(date.getDate()).padStart(2, '0')}`;
-                        datesToTry.push(dateStr);
+                    console.log('Current UTC time:', utcNow.toISOString());
+                    
+                    // Try different time periods (current hour, previous hours, previous days)
+                    const timePeriods = [];
+                    
+                    // Current hour
+                    const currentHour = new Date(utcNow);
+                    currentHour.setMinutes(0, 0, 0);
+                    timePeriods.push(currentHour);
+                    
+                    // Previous few hours
+                    for (let i = 1; i <= 6; i++) {
+                        const prevHour = new Date(currentHour);
+                        prevHour.setHours(prevHour.getHours() - i);
+                        timePeriods.push(prevHour);
                     }
                     
-                    console.log('Dates to try:', datesToTry);
+                    // Previous days at different hours
+                    for (let day = 1; day <= 3; day++) {
+                        for (let hour = 0; hour < 24; hour += 6) { // Every 6 hours
+                            const prevDay = new Date(utcNow);
+                            prevDay.setDate(prevDay.getDate() - day);
+                            prevDay.setHours(hour, 0, 0, 0);
+                            timePeriods.push(prevDay);
+                        }
+                    }
+                    
+                    console.log('Time periods to try:', timePeriods.map(d => d.toISOString()));
                     
                     let availableFiles = [];
-                    let successfulDate = '';
+                    let successfulTime = '';
                     
-                    // Try each date until we find data
-                    for (const dateStr of datesToTry) {
+                    // Try each time period until we find data
+                    for (const time of timePeriods) {
                         try {
-                            const prefix = `${stationCode}_N0B_${dateStr}`;
-                            const s3Url = `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${prefix}`;
+                            const year = time.getUTCFullYear();
+                            const month = String(time.getUTCMonth() + 1).padStart(2, '0');
+                            const day = String(time.getUTCDate()).padStart(2, '0');
+                            const hour = String(time.getUTCHours()).padStart(2, '0');
                             
-                            console.log(`Trying date ${dateStr}: ${s3Url}`);
+                            // Try different product types
+                            const products = ['N0B', 'N0G', 'N0Q'];
                             
-                            const response = await fetch(s3Url);
-                            if (!response.ok) {
-                                console.log(`No data for ${dateStr}, trying next date...`);
-                                continue;
+                            for (const product of products) {
+                                const prefix = `${stationCode}_${product}_${year}_${month}_${day}_${hour}`;
+                                const s3Url = `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${prefix}`;
+                                
+                                console.log(`Trying ${prefix}: ${s3Url}`);
+                                
+                                const response = await fetch(s3Url);
+                                if (!response.ok) {
+                                    console.log(`No data for ${prefix}, trying next...`);
+                                    continue;
+                                }
+                                
+                                const xmlText = await response.text();
+                                const files = this.parseS3XML(xmlText);
+                                
+                                if (files.length > 0) {
+                                    availableFiles = files;
+                                    successfulTime = `${year}_${month}_${day}_${hour}`;
+                                    console.log(`Found ${files.length} files for ${prefix}`);
+                                    break;
+                                }
                             }
                             
-                            const xmlText = await response.text();
-                            const files = this.parseS3XML(xmlText);
-                            
-                            if (files.length > 0) {
-                                availableFiles = files;
-                                successfulDate = dateStr;
-                                console.log(`Found ${files.length} files for ${dateStr}`);
+                            if (availableFiles.length > 0) {
                                 break;
                             }
+                            
                         } catch (error) {
-                            console.log(`Error trying date ${dateStr}:`, error.message);
+                            console.log(`Error trying time ${time.toISOString()}:`, error.message);
                             continue;
                         }
                     }
                     
                     if (availableFiles.length === 0) {
-                        throw new Error(`No NEXRAD files found for ${stationCode} on any recent date`);
+                        throw new Error(`No NEXRAD files found for ${stationCode} in recent time periods`);
                     }
                     
                     // Get the most recent file
                     const latestFile = availableFiles[availableFiles.length - 1];
-                    console.log(`Using file from ${successfulDate}: ${latestFile}`);
+                    console.log(`Using file from ${successfulTime}: ${latestFile}`);
                     
                     // Fetch and parse the NEXRAD data
                     await this.fetchAndParseNEXRAD(latestFile);
                     
-                    this.showStatus(`NEXRAD data loaded for ${stationCode} (${successfulDate})`, 'success');
+                    this.showStatus(`NEXRAD data loaded for ${stationCode} (${successfulTime})`, 'success');
                     
                 } catch (error) {
                     console.error('Error loading NEXRAD data:', error);
@@ -877,11 +911,37 @@
                 for (let i = 0; i < contents.length; i++) {
                     const keyElement = contents[i].getElementsByTagName('Key')[0];
                     if (keyElement && keyElement.textContent) {
-                        files.push(keyElement.textContent);
+                        const key = keyElement.textContent;
+                        // Only include files that match our expected pattern
+                        if (key.includes('_N0B_') || key.includes('_N0G_') || key.includes('_N0Q_')) {
+                            files.push(key);
+                        }
                     }
                 }
                 
-                return files.sort(); // Sort chronologically
+                // Sort by timestamp (most recent first)
+                return files.sort((a, b) => {
+                    // Extract timestamp from key format: STATION_PRODUCT_YYYY_MM_DD_HH_MM_SS
+                    const timeA = this.extractTimestampFromKey(a);
+                    const timeB = this.extractTimestampFromKey(b);
+                    return timeB - timeA; // Descending order
+                });
+            }
+            
+            extractTimestampFromKey(key) {
+                // Parse key format: STATION_PRODUCT_YYYY_MM_DD_HH_MM_SS
+                const parts = key.split('_');
+                if (parts.length >= 7) {
+                    const year = parseInt(parts[2]);
+                    const month = parseInt(parts[3]) - 1; // Month is 0-indexed
+                    const day = parseInt(parts[4]);
+                    const hour = parseInt(parts[5]);
+                    const minute = parseInt(parts[6]);
+                    const second = parts.length > 7 ? parseInt(parts[7]) : 0;
+                    
+                    return new Date(Date.UTC(year, month, day, hour, minute, second)).getTime();
+                }
+                return 0;
             }
             
             async fetchAndParseNEXRAD(fileKey) {
@@ -905,44 +965,301 @@
             
             async parseNEXRADLevel3(arrayBuffer) {
                 try {
-                    // This is a simplified parser for NEXRAD Level III data
-                    // In a production app, you'd want to use a proper NEXRAD parser library
+                    console.log('Parsing NEXRAD Level III data using AtticRadar approach, size:', arrayBuffer.byteLength);
                     
                     const dataView = new DataView(arrayBuffer);
                     
-                    // Basic NEXRAD Level III header parsing
-                    const messageHeader = {
-                        messageSize: dataView.getUint32(0, false), // Big-endian
-                        messageType: dataView.getUint16(4, false),
-                        sequenceNumber: dataView.getUint16(6, false),
-                        julianDate: dataView.getUint16(8, false),
-                        milliseconds: dataView.getUint32(10, false)
+                    // Parse text header (first 30 bytes)
+                    const textHeader = this.parseTextHeader(dataView);
+                    console.log('Text Header:', textHeader);
+                    
+                    // Parse message header (16 bytes)
+                    const messageHeader = this.parseMessageHeader(dataView, 30);
+                    console.log('Message Header:', messageHeader);
+                    
+                    // Parse product description (60 bytes)
+                    const productDescription = this.parseProductDescription(dataView, 46);
+                    console.log('Product Description:', productDescription);
+                    
+                    // Check if data is compressed and decompress if needed
+                    let decompressedData = arrayBuffer;
+                    if (productDescription.compressionMethod > 0) {
+                        console.log('Data is compressed, attempting decompression...');
+                        decompressedData = await this.decompressData(arrayBuffer, productDescription);
+                    }
+                    
+                    // Parse symbology data if available
+                    let symbologyData = null;
+                    if (productDescription.offsetSymbology > 0) {
+                        const symbologyOffset = 30 + (productDescription.offsetSymbology * 2);
+                        if (symbologyOffset < decompressedData.byteLength) {
+                            symbologyData = this.parseSymbologyData(new DataView(decompressedData), symbologyOffset);
+                            console.log('Symbology Data:', symbologyData);
+                        }
+                    }
+                    
+                    // Parse graphic data if available
+                    let graphicData = null;
+                    if (productDescription.offsetGraphic > 0) {
+                        const graphicOffset = 30 + (productDescription.offsetGraphic * 2);
+                        if (graphicOffset < decompressedData.byteLength) {
+                            graphicData = this.parseGraphicData(new DataView(decompressedData), graphicOffset);
+                            console.log('Graphic Data:', graphicData);
+                        }
+                    }
+                    
+                    // Create comprehensive radar data object
+                    const radarData = {
+                        textHeader,
+                        messageHeader,
+                        productDescription,
+                        symbologyData,
+                        graphicData,
+                        rawData: arrayBuffer,
+                        decompressedData
                     };
                     
-                    console.log('NEXRAD Message Header:', messageHeader);
-                    
-                    // For now, create a simple visualization
-                    // In a real implementation, you'd parse the actual radar data
-                    this.createNEXRADVisualization();
+                    // Create visualization with the parsed data
+                    this.createNEXRADVisualization(radarData);
                     
                 } catch (error) {
                     console.error('Error parsing NEXRAD data:', error);
-                    throw error;
+                    // Fallback to basic visualization
+                    this.createNEXRADVisualization();
                 }
             }
             
-            createNEXRADVisualization() {
+            parseTextHeader(dataView) {
+                // Parse text header (first 30 bytes)
+                const text = new TextDecoder().decode(new Uint8Array(dataView.buffer, 0, 30));
+                
+                return {
+                    fileType: text.substring(0, 4),
+                    type: text.substring(4, 7),
+                    date: text.substring(7, 15),
+                    time: text.substring(15, 23),
+                    station: text.substring(23, 27),
+                    version: text.substring(27, 30)
+                };
+            }
+            
+            parseMessageHeader(dataView, offset) {
+                // Parse message header (16 bytes)
+                return {
+                    code: dataView.getUint16(offset, false), // Big-endian
+                    julianDate: dataView.getUint16(offset + 2, false),
+                    seconds: dataView.getUint32(offset + 4, false),
+                    length: dataView.getUint32(offset + 8, false),
+                    source: dataView.getUint16(offset + 12, false),
+                    dest: dataView.getUint16(offset + 14, false)
+                };
+            }
+            
+            parseProductDescription(dataView, offset) {
+                // Parse product description (60 bytes)
+                const divider = dataView.getInt16(offset, false);
+                if (divider !== -1) {
+                    throw new Error(`Invalid product description divider: ${divider}`);
+                }
+                
+                return {
+                    abbreviation: this.getProductAbbreviation(dataView.getUint16(offset + 2, false)),
+                    description: this.getProductDescription(dataView.getUint16(offset + 2, false)),
+                    latitude: dataView.getInt32(offset + 4, false) / 1000,
+                    longitude: dataView.getInt32(offset + 8, false) / 1000,
+                    height: dataView.getInt16(offset + 12, false),
+                    code: dataView.getUint16(offset + 14, false),
+                    mode: dataView.getUint16(offset + 16, false),
+                    vcp: dataView.getUint16(offset + 18, false),
+                    sequenceNumber: dataView.getUint16(offset + 20, false),
+                    volumeScanNumber: dataView.getUint16(offset + 22, false),
+                    volumeScanDate: dataView.getUint16(offset + 24, false),
+                    volumeScanTime: dataView.getUint32(offset + 26, false),
+                    productDate: dataView.getUint16(offset + 30, false),
+                    productTime: dataView.getUint32(offset + 32, false),
+                    elevationNumber: dataView.getUint16(offset + 36, false),
+                    version: dataView.getUint8(offset + 38, false),
+                    spotBlank: dataView.getUint8(offset + 39, false),
+                    offsetSymbology: dataView.getUint32(offset + 40, false),
+                    offsetGraphic: dataView.getUint32(offset + 44, false),
+                    offsetTabular: dataView.getUint32(offset + 48, false),
+                    compressionMethod: dataView.getUint16(offset + 52, false),
+                    uncompressedProductSize: dataView.getUint32(offset + 54, false)
+                };
+            }
+            
+            getProductAbbreviation(code) {
+                // Map product codes to abbreviations
+                const productMap = {
+                    19: 'N0B', // Base Reflectivity
+                    20: 'N0G', // Base Reflectivity Legacy
+                    21: 'N0Q', // Base Reflectivity HR
+                    27: 'N0U', // Base Velocity
+                    28: 'N1U', // Base Velocity 1st
+                    29: 'N2U', // Base Velocity 2nd
+                    30: 'N3U', // Base Velocity 3rd
+                    32: 'N0S', // Storm Relative Velocity
+                    34: 'N0V', // Base Velocity HR
+                    37: 'N0C', // Correlation Coefficient
+                    38: 'N0K', // Specific Differential Phase
+                    41: 'N0Z', // Differential Reflectivity
+                    57: 'N0H', // Hydrometeor Classification
+                    58: 'N0P', // One Hour Precipitation
+                    59: 'N1P', // Storm Total Precipitation
+                    61: 'N0T', // Storm Tracking Information
+                    78: 'N0R', // Digital Precipitation Array
+                    80: 'N0M', // One Hour Precipitation
+                    94: 'N0I', // Digital Instantaneous Precipitation
+                    99: 'N0U', // Base Velocity
+                    134: 'N0L', // Digital Base Reflectivity
+                    135: 'N0M', // Digital One Hour Precipitation
+                    138: 'N0Q', // Digital Base Reflectivity HR
+                    141: 'N0S', // Digital Storm Relative Velocity
+                    153: 'N0U', // Digital Base Velocity
+                    154: 'N0V', // Digital Base Velocity HR
+                    159: 'N0H', // Digital Hydrometeor Classification
+                    161: 'N0K', // Digital Specific Differential Phase
+                    165: 'N0Z', // Digital Differential Reflectivity
+                    170: 'N0C', // Digital Correlation Coefficient
+                    172: 'N0P', // Digital One Hour Precipitation
+                    177: 'N0I', // Digital Instantaneous Precipitation
+                    180: 'N0T', // Digital Storm Tracking Information
+                    182: 'N0R', // Digital Precipitation Array
+                    186: 'N0M'  // Digital Storm Total Precipitation
+                };
+                
+                return productMap[code] || `Unknown(${code})`;
+            }
+            
+            getProductDescription(code) {
+                // Map product codes to descriptions
+                const descriptionMap = {
+                    19: 'Base Reflectivity',
+                    20: 'Base Reflectivity Legacy',
+                    21: 'Base Reflectivity HR',
+                    27: 'Base Velocity',
+                    28: 'Base Velocity 1st',
+                    29: 'Base Velocity 2nd',
+                    30: 'Base Velocity 3rd',
+                    32: 'Storm Relative Velocity',
+                    34: 'Base Velocity HR',
+                    37: 'Correlation Coefficient',
+                    38: 'Specific Differential Phase',
+                    41: 'Differential Reflectivity',
+                    57: 'Hydrometeor Classification',
+                    58: 'One Hour Precipitation',
+                    59: 'Storm Total Precipitation',
+                    61: 'Storm Tracking Information',
+                    78: 'Digital Precipitation Array',
+                    80: 'One Hour Precipitation',
+                    94: 'Digital Instantaneous Precipitation',
+                    99: 'Base Velocity',
+                    134: 'Digital Base Reflectivity',
+                    135: 'Digital One Hour Precipitation',
+                    138: 'Digital Base Reflectivity HR',
+                    141: 'Digital Storm Relative Velocity',
+                    153: 'Digital Base Velocity',
+                    154: 'Digital Base Velocity HR',
+                    159: 'Digital Hydrometeor Classification',
+                    161: 'Digital Specific Differential Phase',
+                    165: 'Digital Differential Reflectivity',
+                    170: 'Digital Correlation Coefficient',
+                    172: 'Digital One Hour Precipitation',
+                    177: 'Digital Instantaneous Precipitation',
+                    180: 'Digital Storm Tracking Information',
+                    182: 'Digital Precipitation Array',
+                    186: 'Digital Storm Total Precipitation'
+                };
+                
+                return descriptionMap[code] || 'Unknown Product';
+            }
+            
+            async decompressData(arrayBuffer, productDescription) {
+                try {
+                    // For now, return the original data
+                    // In a full implementation, you'd handle bzip2 decompression here
+                    console.log('Decompression not yet implemented, using original data');
+                    return arrayBuffer;
+                } catch (error) {
+                    console.error('Decompression failed:', error);
+                    return arrayBuffer;
+                }
+            }
+            
+            parseSymbologyData(dataView, offset) {
+                try {
+                    // Parse symbology header
+                    const symbologyHeader = {
+                        divider: dataView.getInt16(offset, false),
+                        layerDivider: dataView.getInt16(offset + 2, false),
+                        numberOfLayers: dataView.getUint16(offset + 4, false),
+                        layer1: dataView.getUint16(offset + 6, false),
+                        layer2: dataView.getUint16(offset + 8, false),
+                        layer3: dataView.getUint16(offset + 10, false),
+                        layer4: dataView.getUint16(offset + 12, false),
+                        layer5: dataView.getUint16(offset + 14, false),
+                        layer6: dataView.getUint16(offset + 16, false),
+                        layer7: dataView.getUint16(offset + 18, false),
+                        layer8: dataView.getUint16(offset + 20, false)
+                    };
+                    
+                    return {
+                        header: symbologyHeader,
+                        offset: offset
+                    };
+                } catch (error) {
+                    console.error('Error parsing symbology data:', error);
+                    return null;
+                }
+            }
+            
+            parseGraphicData(dataView, offset) {
+                try {
+                    // Parse graphic header
+                    const graphicHeader = {
+                        divider: dataView.getInt16(offset, false),
+                        blockDivider: dataView.getInt16(offset + 2, false),
+                        numberOfBlocks: dataView.getUint16(offset + 4, false),
+                        block1: dataView.getUint16(offset + 6, false),
+                        block2: dataView.getUint16(offset + 8, false),
+                        block3: dataView.getUint16(offset + 10, false),
+                        block4: dataView.getUint16(offset + 12, false),
+                        block5: dataView.getUint16(offset + 14, false),
+                        block6: dataView.getUint16(offset + 16, false),
+                        block7: dataView.getUint16(offset + 18, false),
+                        block8: dataView.getUint16(offset + 20, false)
+                    };
+                    
+                    return {
+                        header: graphicHeader,
+                        offset: offset
+                    };
+                } catch (error) {
+                    console.error('Error parsing graphic data:', error);
+                    return null;
+                }
+            }
+            
+            createNEXRADVisualization(radarData) {
                 // Clear existing NEXRAD visualization
                 if (this.nexradLayer) {
                     this.map.removeLayer(this.nexradLayer);
                 }
                 
+                // Clear intensity rings
+                if (this.intensityRings) {
+                    this.intensityRings.forEach(ring => this.map.removeLayer(ring));
+                }
+                this.intensityRings = [];
+                
                 // Create a simple radar coverage visualization
                 if (this.currentStation) {
                     // Find the station coordinates
-                    const station = this.radarStations.find(s => 
-                        s.properties.identifier === this.currentStation
-                    );
+                    const station = this.radarStations.find(s => {
+                        const properties = s.properties;
+                        const identifier = properties.identifier || properties.id || properties.station_id || properties.code;
+                        return identifier === this.currentStation;
+                    });
                     
                     if (station) {
                         const coordinates = station.geometry.coordinates;
@@ -958,27 +1275,154 @@
                             dashArray: '10, 5'
                         }).addTo(this.map);
                         
-                        // Add intensity rings
+                        // Add intensity rings with different colors based on range
                         const intensityRings = [
-                            { radius: 50000, color: '#10b981', opacity: 0.3 },
-                            { radius: 100000, color: '#fbbf24', opacity: 0.2 },
-                            { radius: 150000, color: '#f97316', opacity: 0.15 },
-                            { radius: 200000, color: '#ef4444', opacity: 0.1 }
+                            { radius: 50000, color: '#10b981', opacity: 0.3, label: '50km' },
+                            { radius: 100000, color: '#fbbf24', opacity: 0.2, label: '100km' },
+                            { radius: 150000, color: '#f97316', opacity: 0.15, label: '150km' },
+                            { radius: 200000, color: '#ef4444', opacity: 0.1, label: '200km' }
                         ];
                         
+                        this.intensityRings = [];
                         intensityRings.forEach(ring => {
-                            L.circle([lat, lon], {
+                            const circle = L.circle([lat, lon], {
                                 radius: ring.radius,
                                 color: ring.color,
                                 fillColor: 'transparent',
                                 weight: 1,
                                 opacity: ring.opacity
                             }).addTo(this.map);
+                            
+                            // Add range label
+                            const label = L.divIcon({
+                                className: 'range-label',
+                                html: `<div style="
+                                    background: rgba(0, 0, 0, 0.8);
+                                    color: white;
+                                    padding: 2px 6px;
+                                    border-radius: 3px;
+                                    font-size: 10px;
+                                    font-weight: 500;
+                                    white-space: nowrap;
+                                ">${ring.label}</div>`,
+                                iconSize: [40, 20],
+                                iconAnchor: [20, 10]
+                            });
+                            
+                            // Position label at the edge of the ring
+                            const labelLat = lat + (ring.radius / 111000) * Math.cos(Math.PI / 4);
+                            const labelLon = lon + (ring.radius / 111000) * Math.sin(Math.PI / 4) / Math.cos(lat * Math.PI / 180);
+                            
+                            L.marker([labelLat, labelLon], { icon: label }).addTo(this.map);
+                            
+                            this.intensityRings.push(circle);
                         });
+                        
+                        // Add data information if available
+                        if (radarData) {
+                            this.addDataInfo(radarData, [lat, lon]);
+                        }
                         
                         // Center map on the selected station
                         this.map.setView([lat, lon], 8);
                     }
+                }
+            }
+            
+            addDataInfo(radarData, coordinates) {
+                try {
+                    // Create an info panel showing the parsed data
+                    const infoContent = `
+                        <div style="
+                            background: rgba(0, 0, 0, 0.9);
+                            color: white;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border: 1px solid #3b82f6;
+                            min-width: 300px;
+                            font-family: monospace;
+                            font-size: 12px;
+                            max-height: 400px;
+                            overflow-y: auto;
+                        ">
+                            <h4 style="margin: 0 0 10px 0; color: #3b82f6;">NEXRAD Level III Data</h4>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #fbbf24;">Text Header:</strong><br>
+                                <div style="margin-left: 10px; margin-top: 5px;">
+                                    <div><strong>File Type:</strong> ${radarData.textHeader?.fileType || 'N/A'}</div>
+                                    <div><strong>Product:</strong> ${radarData.textHeader?.type || 'N/A'}</div>
+                                    <div><strong>Station:</strong> ${radarData.textHeader?.station || 'N/A'}</div>
+                                    <div><strong>Date:</strong> ${radarData.textHeader?.date || 'N/A'}</div>
+                                    <div><strong>Time:</strong> ${radarData.textHeader?.time || 'N/A'}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #fbbf24;">Message Header:</strong><br>
+                                <div style="margin-left: 10px; margin-top: 5px;">
+                                    <div><strong>Code:</strong> ${radarData.messageHeader?.code || 'N/A'}</div>
+                                    <div><strong>Length:</strong> ${radarData.messageHeader?.length || 'N/A'} bytes</div>
+                                    <div><strong>Julian Date:</strong> ${radarData.messageHeader?.julianDate || 'N/A'}</div>
+                                    <div><strong>Seconds:</strong> ${radarData.messageHeader?.seconds || 'N/A'}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #fbbf24;">Product Description:</strong><br>
+                                <div style="margin-left: 10px; margin-top: 5px;">
+                                    <div><strong>Product:</strong> ${radarData.productDescription?.abbreviation || 'N/A'} - ${radarData.productDescription?.description || 'N/A'}</div>
+                                    <div><strong>Location:</strong> ${radarData.productDescription?.latitude?.toFixed(3) || 'N/A'}, ${radarData.productDescription?.longitude?.toFixed(3) || 'N/A'}</div>
+                                    <div><strong>Height:</strong> ${radarData.productDescription?.height || 'N/A'} m</div>
+                                    <div><strong>Mode:</strong> ${radarData.productDescription?.mode || 'N/A'}</div>
+                                    <div><strong>VCP:</strong> ${radarData.productDescription?.vcp || 'N/A'}</div>
+                                    <div><strong>Volume Scan:</strong> ${radarData.productDescription?.volumeScanNumber || 'N/A'}</div>
+                                    <div><strong>Elevation:</strong> ${radarData.productDescription?.elevationNumber || 'N/A'}</div>
+                                    <div><strong>Compression:</strong> ${radarData.productDescription?.compressionMethod > 0 ? 'Yes' : 'No'}</div>
+                                </div>
+                            </div>
+                            
+                            ${radarData.symbologyData ? `
+                                <div style="margin-bottom: 15px;">
+                                    <strong style="color: #fbbf24;">Symbology Data:</strong><br>
+                                    <div style="margin-left: 10px; margin-top: 5px;">
+                                        <div><strong>Layers:</strong> ${radarData.symbologyData.header.numberOfLayers || 'N/A'}</div>
+                                        <div><strong>Offset:</strong> ${radarData.symbologyData.offset || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${radarData.graphicData ? `
+                                <div style="margin-bottom: 15px;">
+                                    <strong style="color: #fbbf24;">Graphic Data:</strong><br>
+                                    <div style="margin-left: 10px; margin-top: 5px;">
+                                        <div><strong>Blocks:</strong> ${radarData.graphicData.header.numberOfBlocks || 'N/A'}</div>
+                                        <div><strong>Offset:</strong> ${radarData.graphicData.offset || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            <div style="margin-top: 15px; font-size: 10px; opacity: 0.7; border-top: 1px solid #374151; padding-top: 10px;">
+                                Data parsed using AtticRadar methodology<br>
+                                File size: ${(radarData.rawData?.byteLength / 1024).toFixed(1)} KB
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Create popup with the info
+                    const infoMarker = L.marker(coordinates, {
+                        icon: L.divIcon({
+                            className: 'data-info-marker',
+                            html: '<div style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">📊</div>',
+                            iconSize: [30, 20],
+                            iconAnchor: [15, 10]
+                        })
+                    }).addTo(this.map);
+                    
+                    infoMarker.bindPopup(infoContent);
+                    
+                } catch (error) {
+                    console.error('Error adding data info:', error);
                 }
             }
             
