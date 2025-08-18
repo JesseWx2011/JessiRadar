@@ -557,6 +557,7 @@
                     this.radarStations = data.features || [];
                     
                     console.log(`Loaded ${this.radarStations.length} radar stations`);
+                    console.log('Sample station data:', this.radarStations[0]);
                     this.showStatus(`Loaded ${this.radarStations.length} radar stations`, 'success');
                     
                     // Populate station selector
@@ -566,9 +567,99 @@
                     this.addRadarStationMarkers();
                     
                 } catch (error) {
-                    console.error('Error loading radar stations:', error);
-                    this.showStatus('Failed to load radar stations', 'error');
+                    console.error('Error loading radar stations from API:', error);
+                    this.showStatus('Using fallback radar stations', 'loading');
+                    
+                    // Use fallback sample stations
+                    this.useFallbackStations();
                 }
+            }
+            
+            useFallbackStations() {
+                // Sample radar stations as fallback
+                this.radarStations = [
+                    {
+                        type: 'Feature',
+                        properties: {
+                            identifier: 'KMOB',
+                            name: 'Mobile, AL',
+                            state: 'AL'
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [-88.2397, 30.6589]
+                        }
+                    },
+                    {
+                        type: 'Feature',
+                        properties: {
+                            identifier: 'KTLH',
+                            name: 'Tallahassee, FL',
+                            state: 'FL'
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [-84.3297, 30.3975]
+                        }
+                    },
+                    {
+                        type: 'Feature',
+                        properties: {
+                            identifier: 'KJAX',
+                            name: 'Jacksonville, FL',
+                            state: 'FL'
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [-81.6869, 30.4847]
+                        }
+                    },
+                    {
+                        type: 'Feature',
+                        properties: {
+                            identifier: 'KTBW',
+                            name: 'Tampa Bay, FL',
+                            state: 'FL'
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [-82.4019, 27.7054]
+                        }
+                    },
+                    {
+                        type: 'Feature',
+                        properties: {
+                            identifier: 'KMLB',
+                            name: 'Melbourne, FL',
+                            state: 'FL'
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [-80.6453, 28.1131]
+                        }
+                    },
+                    {
+                        type: 'Feature',
+                        properties: {
+                            identifier: 'KPOX',
+                            name: 'Palm Beach, FL',
+                            state: 'FL'
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [-80.1117, 26.5119]
+                        }
+                    }
+                ];
+                
+                console.log('Using fallback stations:', this.radarStations.length);
+                this.showStatus(`Loaded ${this.radarStations.length} fallback stations`, 'success');
+                
+                // Populate station selector
+                this.populateStationSelector();
+                
+                // Add radar station markers to the map
+                this.addRadarStationMarkers();
             }
             
             populateStationSelector() {
@@ -581,10 +672,17 @@
                 // Add station options
                 this.radarStations.forEach(station => {
                     const properties = station.properties;
-                    if (properties && properties.identifier && properties.name) {
+                    console.log('Station properties:', properties);
+                    
+                    // Check for different possible identifier properties
+                    const identifier = properties.identifier || properties.id || properties.station_id || properties.code;
+                    const name = properties.name || properties.station_name || 'Unknown';
+                    
+                    if (identifier) {
                         const option = document.createElement('option');
-                        option.value = properties.identifier;
-                        option.textContent = `${properties.identifier} - ${properties.name}`;
+                        option.value = identifier;
+                        option.textContent = `${identifier} - ${name}`;
+                        option.dataset.station = JSON.stringify(station);
                         stationSelect.appendChild(option);
                     }
                 });
@@ -595,6 +693,10 @@
                     loadBtn.disabled = !selectedStation;
                     
                     if (selectedStation) {
+                        // Store the selected station data
+                        const selectedOption = e.target.options[e.target.selectedIndex];
+                        this.selectedStationData = JSON.parse(selectedOption.dataset.station);
+                        
                         // Highlight the selected station on the map
                         this.highlightSelectedStation(selectedStation);
                     }
@@ -603,7 +705,8 @@
                 // Handle load button click
                 loadBtn.addEventListener('click', () => {
                     const selectedStation = stationSelect.value;
-                    if (selectedStation) {
+                    if (selectedStation && this.selectedStationData) {
+                        console.log('Loading data for station:', selectedStation, this.selectedStationData);
                         this.loadNEXRADData(selectedStation);
                     }
                 });
@@ -616,9 +719,11 @@
                 }
                 
                 // Find and highlight the selected station
-                const station = this.radarStations.find(s => 
-                    s.properties.identifier === stationCode
-                );
+                const station = this.radarStations.find(s => {
+                    const properties = s.properties;
+                    const identifier = properties.identifier || properties.id || properties.station_id || properties.code;
+                    return identifier === stationCode;
+                });
                 
                 if (station) {
                     const coordinates = station.geometry.coordinates;
@@ -650,7 +755,10 @@
                     const properties = station.properties;
                     const coordinates = station.geometry.coordinates;
                     
-                    if (coordinates && coordinates.length >= 2) {
+                    // Check for different possible identifier properties
+                    const identifier = properties.identifier || properties.id || properties.station_id || properties.code;
+                    
+                    if (coordinates && coordinates.length >= 2 && identifier) {
                         const [lon, lat] = coordinates;
                         
                         // Create marker for radar station
@@ -667,9 +775,9 @@
                         const popupContent = `
                             <div style="text-align: center; min-width: 200px;">
                                 <strong>${properties.name || 'Unknown'}</strong><br>
-                                <small>${properties.identifier || 'N/A'}</small><br>
+                                <small>${identifier}</small><br>
                                 <span style="color: #3b82f6;">● Radar Station</span><br>
-                                <button onclick="window.stormTracker.loadNEXRADData('${properties.identifier}')" 
+                                <button onclick="window.stormTracker.loadNEXRADData('${identifier}')" 
                                         style="margin-top: 8px; padding: 4px 8px; background: #1e40af; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                     Load Data
                                 </button>
@@ -684,39 +792,75 @@
             
             async loadNEXRADData(stationCode) {
                 try {
+                    console.log('loadNEXRADData called with stationCode:', stationCode);
+                    console.log('Type of stationCode:', typeof stationCode);
+                    console.log('Selected station data:', this.selectedStationData);
+                    
+                    if (!stationCode || stationCode === 'undefined') {
+                        throw new Error(`Invalid station code: ${stationCode}`);
+                    }
+                    
                     this.currentStation = stationCode;
                     this.showStatus(`Loading NEXRAD data for ${stationCode}...`, 'loading');
                     
-                    // Get current date in YYYY_MM_DD format
+                    // Try multiple dates (current date and previous days)
+                    const datesToTry = [];
                     const now = new Date();
-                    const dateStr = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
                     
-                    // Fetch available NEXRAD files for the station and date
-                    const prefix = `${stationCode}_N0B_${dateStr}`;
-                    const s3Url = `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${prefix}`;
-                    
-                    console.log(`Fetching NEXRAD data from: ${s3Url}`);
-                    
-                    const response = await fetch(s3Url);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                    // Try current date and up to 3 previous days
+                    for (let i = 0; i < 4; i++) {
+                        const date = new Date(now);
+                        date.setDate(date.getDate() - i);
+                        const dateStr = `${date.getFullYear()}_${String(date.getMonth() + 1).padStart(2, '0')}_${String(date.getDate()).padStart(2, '0')}`;
+                        datesToTry.push(dateStr);
                     }
                     
-                    const xmlText = await response.text();
-                    const availableFiles = this.parseS3XML(xmlText);
+                    console.log('Dates to try:', datesToTry);
+                    
+                    let availableFiles = [];
+                    let successfulDate = '';
+                    
+                    // Try each date until we find data
+                    for (const dateStr of datesToTry) {
+                        try {
+                            const prefix = `${stationCode}_N0B_${dateStr}`;
+                            const s3Url = `https://unidata-nexrad-level3.s3.amazonaws.com/?prefix=${prefix}`;
+                            
+                            console.log(`Trying date ${dateStr}: ${s3Url}`);
+                            
+                            const response = await fetch(s3Url);
+                            if (!response.ok) {
+                                console.log(`No data for ${dateStr}, trying next date...`);
+                                continue;
+                            }
+                            
+                            const xmlText = await response.text();
+                            const files = this.parseS3XML(xmlText);
+                            
+                            if (files.length > 0) {
+                                availableFiles = files;
+                                successfulDate = dateStr;
+                                console.log(`Found ${files.length} files for ${dateStr}`);
+                                break;
+                            }
+                        } catch (error) {
+                            console.log(`Error trying date ${dateStr}:`, error.message);
+                            continue;
+                        }
+                    }
                     
                     if (availableFiles.length === 0) {
-                        throw new Error(`No NEXRAD files found for ${stationCode} on ${dateStr}`);
+                        throw new Error(`No NEXRAD files found for ${stationCode} on any recent date`);
                     }
                     
                     // Get the most recent file
                     const latestFile = availableFiles[availableFiles.length - 1];
-                    console.log(`Latest file: ${latestFile}`);
+                    console.log(`Using file from ${successfulDate}: ${latestFile}`);
                     
                     // Fetch and parse the NEXRAD data
                     await this.fetchAndParseNEXRAD(latestFile);
                     
-                    this.showStatus(`NEXRAD data loaded for ${stationCode}`, 'success');
+                    this.showStatus(`NEXRAD data loaded for ${stationCode} (${successfulDate})`, 'success');
                     
                 } catch (error) {
                     console.error('Error loading NEXRAD data:', error);
