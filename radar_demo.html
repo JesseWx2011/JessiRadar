@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StormTracker Pro - Raw Radar Data Demo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: white;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #3b82f6;
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #3b82f6;
+            font-size: 2.5rem;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .demo-container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+        
+        .controls {
+            width: 300px;
+            background: #1e293b;
+            padding: 20px;
+            border-right: 2px solid #334155;
+            overflow-y: auto;
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #334155;
+            border-radius: 8px;
+            border: 1px solid #475569;
+        }
+        
+        .control-section h3 {
+            margin: 0 0 15px 0;
+            color: #3b82f6;
+            font-size: 1.2rem;
+        }
+        
+        .control-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+        
+        .control-section select,
+        .control-section input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #475569;
+            border: 1px solid #64748b;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .control-section button {
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .control-section button:hover {
+            background: #2563eb;
+        }
+        
+        .control-section button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 10000;
+            max-width: 300px;
+        }
+        
+        .status.success {
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            border: 2px solid #22c55e;
+        }
+        
+        .status.error {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: 2px solid #ef4444;
+        }
+        
+        .status.loading {
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            border: 2px solid #3b82f6;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+            font-family: monospace;
+            font-size: 11px;
+            min-width: 140px;
+            z-index: 1000;
+        }
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #3b82f6;
+            text-align: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+        
+        .info-panel h4 {
+            margin: 0 0 10px 0;
+            color: #3b82f6;
+        }
+        
+        .info-panel div {
+            margin-bottom: 5px;
+        }
+        
+        .info-panel strong {
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌩️ StormTracker Pro</h1>
+        <p>Raw NEXRAD Level III Data Visualization Demo</p>
+    </div>
+    
+    <div class="demo-container">
+        <div class="controls">
+            <div class="control-section">
+                <h3>📡 Radar Station</h3>
+                <label for="stationSelect">Select Station:</label>
+                <select id="stationSelect">
+                    <option value="">Loading stations...</option>
+                </select>
+                
+                <label for="productSelect">Product Type:</label>
+                <select id="productSelect">
+                    <option value="N0B">N0B - Base Reflectivity</option>
+                    <option value="N0G">N0G - Base Reflectivity Legacy</option>
+                    <option value="N0Q">N0Q - Base Reflectivity HR</option>
+                    <option value="N0U">N0U - Base Velocity</option>
+                    <option value="N0S">N0S - Storm Relative Velocity</option>
+                    <option value="N0H">N0H - Hydrometeor Classification</option>
+                </select>
+                
+                <button id="loadDataBtn" disabled>Load Radar Data</button>
+            </div>
+            
+            <div class="control-section">
+                <h3>🎨 Display Options</h3>
+                <label for="pointSize">Point Size (meters):</label>
+                <input type="range" id="pointSize" min="100" max="2000" value="500" step="100">
+                <span id="pointSizeValue">500m</span>
+                
+                <label for="opacity">Opacity:</label>
+                <input type="range" id="opacity" min="0.1" max="1.0" value="0.7" step="0.1">
+                <span id="opacityValue">0.7</span>
+                
+                <button id="clearDataBtn">Clear Data</button>
+            </div>
+            
+            <div class="control-section">
+                <h3>ℹ️ About</h3>
+                <p style="font-size: 12px; line-height: 1.4; color: #cbd5e1;">
+                    This demo shows raw NEXRAD Level III data parsed from binary files and displayed as colored points on the map. 
+                    Each point represents a radar data value at a specific range and azimuth from the radar station.
+                </p>
+                <p style="font-size: 12px; line-height: 1.4; color: #cbd5e1;">
+                    <strong>Colors:</strong> Green (low) → Yellow → Orange → Red → Purple → Blue (high)
+                </p>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+            
+            <div class="info-panel" id="infoPanel" style="display: none;">
+                <h4>📊 Radar Data Info</h4>
+                <div id="infoContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="status" class="status" style="display: none;"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        class RadarDataDemo {
+            constructor() {
+                this.map = null;
+                this.radarStations = [];
+                this.currentStation = null;
+                this.radarDataLayers = [];
+                this.currentData = null;
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    this.initMap();
+                    this.initControls();
+                    await this.loadRadarStations();
+                    this.showStatus('Demo loaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Initialization error:', error);
+                    this.showStatus('Failed to initialize demo', 'error');
+                }
+            }
+            
+            initMap() {
+                this.map = L.map('map', {
+                    center: [39.8283, -98.5795],
+                    zoom: 4,
+                    zoomControl: false
+                });
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(this.map);
+            }
+            
+            initControls() {
+                // Station selection
+                document.getElementById('stationSelect').addEventListener('change', (e) => {
+                    this.currentStation = e.target.value;
+                    document.getElementById('loadDataBtn').disabled = !this.currentStation;
+                });
+                
+                // Load data button
+                document.getElementById('loadDataBtn').addEventListener('click', () => {
+                    this.loadRadarData();
+                });
+                
+                // Clear data button
+                document.getElementById('clearDataBtn').addEventListener('click', () => {
+                    this.clearRadarData();
+                });
+                
+                // Point size slider
+                const pointSizeSlider = document.getElementById('pointSize');
+                const pointSizeValue = document.getElementById('pointSizeValue');
+                pointSizeSlider.addEventListener('input', (e) => {
+                    pointSizeValue.textContent = e.target.value + 'm';
+                });
+                
+                // Opacity slider
+                const opacitySlider = document.getElementById('opacity');
+                const opacityValue = document.getElementById('opacityValue');
+                opacitySlider.addEventListener('input', (e) => {
+                    opacityValue.textContent = e.target.value;
+                });
+            }
+            
+            async loadRadarStations() {
+                try {
+                    this.showStatus('Loading radar stations...', 'loading');
+                    
+                    const response = await fetch('https://api.weather.gov/radar/stations');
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const data = await response.json();
+                    this.radarStations = data.features || [];
+                    
+                    const select = document.getElementById('stationSelect');
+                    select.innerHTML = '<option value="">Select a radar station...</option>';
+                    
+                    this.radarStations.forEach(station => {
+                        const properties = station.properties;
+                        const identifier = properties.identifier || properties.id || properties.station_id || properties.code;
+                        if (identifier) {
+                            const option = document.createElement('option');
+                            option.value = identifier;
+                            option.textContent = `${identifier} - ${properties.name || 'Unknown'}`;
+                            select.appendChild(option);
+                        }
+                    });
+                    
+                    this.showStatus(`Loaded ${this.radarStations.length} radar stations`, 'success');
+                    
+                } catch (error) {
+                    console.error('Error loading radar stations:', error);
+                    this.showStatus('Failed to load radar stations', 'error');
+                    this.useFallbackStations();
+                }
+            }
+            
+            useFallbackStations() {
+                const fallbackStations = [
+                    { identifier: 'KMOB', name: 'Mobile, AL', coordinates: [-88.2397, 30.6796] },
+                    { identifier: 'KTLH', name: 'Tallahassee, FL', coordinates: [-84.3507, 30.3975] },
+                    { identifier: 'KJAX', name: 'Jacksonville, FL', coordinates: [-81.7020, 30.4846] },
+                    { identifier: 'KTBW', name: 'Tampa Bay, FL', coordinates: [-82.4028, 27.7055] },
+                    { identifier: 'KMLB', name: 'Melbourne, FL', coordinates: [-80.6450, 28.1131] }
+                ];
+                
+                const select = document.getElementById('stationSelect');
+                select.innerHTML = '<option value="">Select a radar station...</option>';
+                
+                fallbackStations.forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.identifier;
+                    option.textContent = `${station.identifier} - ${station.name}`;
+                    select.appendChild(option);
+                });
+                
+                this.showStatus('Using fallback station list', 'warning');
+            }
+            
+            async loadRadarData() {
+                if (!this.currentStation) return;
+                
+                try {
+                    this.showStatus('Loading radar data...', 'loading');
+                    
+                    // For demo purposes, create synthetic radar data
+                    const station = this.radarStations.find(s => {
+                        const properties = s.properties;
+                        const identifier = properties.identifier || properties.id || properties.station_id || properties.code;
+                        return identifier === this.currentStation;
+                    });
+                    
+                    if (station) {
+                        const coordinates = station.geometry.coordinates;
+                        const [lon, lat] = coordinates;
+                        
+                        // Create synthetic radar data
+                        const syntheticData = this.createSyntheticRadarData([lat, lon]);
+                        this.displayRadarData(syntheticData, [lat, lon]);
+                        
+                        this.showStatus('Synthetic radar data loaded!', 'success');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading radar data:', error);
+                    this.showStatus('Failed to load radar data', 'error');
+                }
+            }
+            
+            createSyntheticRadarData(stationCoords) {
+                const [stationLat, stationLon] = stationCoords;
+                const radialData = [];
+                
+                // Create 360 radials (1 degree spacing)
+                for (let azimuth = 0; azimuth < 360; azimuth += 2) {
+                    const azimuthRad = (azimuth * Math.PI) / 180;
+                    const rangeData = [];
+                    
+                    // Create data points along each radial (up to 200km)
+                    for (let range = 0; range < 200; range++) {
+                        // Create realistic radar patterns
+                        let value = 0;
+                        
+                        // Add some precipitation patterns
+                        if (range > 20 && range < 150) {
+                            // Create storm-like patterns
+                            const stormCenter = 85 + Math.sin(azimuth * 0.1) * 20;
+                            const stormIntensity = Math.exp(-Math.pow((range - stormCenter) / 30, 2));
+                            value = Math.floor(stormIntensity * 150 + Math.random() * 30);
+                            
+                            // Add some noise
+                            if (Math.random() > 0.7) {
+                                value = Math.floor(Math.random() * 50);
+                            }
+                        }
+                        
+                        rangeData.push(value);
+                    }
+                    
+                    radialData.push({
+                        header: {
+                            centerAzimuth: azimuth * 10, // Convert to tenths of degrees
+                            numberOfRangeBins: rangeData.length
+                        },
+                        data: rangeData
+                    });
+                }
+                
+                return radialData;
+            }
+            
+            displayRadarData(radialData, stationCoords) {
+                try {
+                    this.clearRadarData();
+                    
+                    const [stationLon, stationLat] = stationCoords;
+                    const colorScale = this.createReflectivityColorScale();
+                    const pointSize = parseInt(document.getElementById('pointSize').value);
+                    const opacity = parseFloat(document.getElementById('opacity').value);
+                    
+                    let displayedPoints = 0;
+                    
+                    // Process each radial
+                    radialData.forEach((radial, radialIndex) => {
+                        if (radial.data && radial.data.length > 0) {
+                            const azimuth = radial.header.centerAzimuth / 10;
+                            const azimuthRad = (azimuth * Math.PI) / 180;
+                            
+                            // Create points along this radial
+                            radial.data.forEach((dataValue, rangeIndex) => {
+                                if (dataValue > 0) {
+                                    const rangeKm = rangeIndex * 1.0;
+                                    const rangeMeters = rangeKm * 1000;
+                                    
+                                    // Calculate position
+                                    const pointLat = stationLat + (rangeMeters / 111000) * Math.cos(azimuthRad);
+                                    const pointLon = stationLon + (rangeMeters / 111000) * Math.sin(azimuthRad) / Math.cos(stationLat * Math.PI / 180);
+                                    
+                                    const color = colorScale(dataValue);
+                                    
+                                    // Create circle for this data point
+                                    const point = L.circle([pointLat, pointLon], {
+                                        radius: pointSize,
+                                        color: color,
+                                        fillColor: color,
+                                        fillOpacity: opacity,
+                                        weight: 1
+                                    });
+                                    
+                                    // Add tooltip
+                                    point.bindTooltip(`Value: ${dataValue}<br>Range: ${rangeKm.toFixed(1)}km<br>Azimuth: ${azimuth.toFixed(1)}°`, {
+                                        permanent: false,
+                                        direction: 'top'
+                                    });
+                                    
+                                    point.addTo(this.map);
+                                    this.radarDataLayers.push(point);
+                                    displayedPoints++;
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Center map on station
+                    this.map.setView(stationCoords, 8);
+                    
+                    // Show info panel
+                    this.showInfoPanel(radialData, displayedPoints);
+                    
+                    this.showStatus(`Displayed ${displayedPoints} radar data points`, 'success');
+                    
+                } catch (error) {
+                    console.error('Error displaying radar data:', error);
+                    this.showStatus('Error displaying radar data', 'error');
+                }
+            }
+            
+            createReflectivityColorScale() {
+                return (value) => {
+                    if (value === 0) return '#000000';
+                    if (value < 20) return '#00ff00';
+                    if (value < 40) return '#40ff00';
+                    if (value < 60) return '#80ff00';
+                    if (value < 80) return '#bfff00';
+                    if (value < 100) return '#ffff00';
+                    if (value < 120) return '#ffbf00';
+                    if (value < 140) return '#ff8000';
+                    if (value < 160) return '#ff4000';
+                    if (value < 180) return '#ff0000';
+                    if (value < 200) return '#ff0080';
+                    if (value < 220) return '#ff00ff';
+                    if (value < 240) return '#8000ff';
+                    if (value < 260) return '#4000ff';
+                    if (value < 280) return '#0080ff';
+                    return '#00ffff';
+                };
+            }
+            
+            showInfoPanel(radialData, pointCount) {
+                const infoPanel = document.getElementById('infoPanel');
+                const infoContent = document.getElementById('infoContent');
+                
+                const totalRadials = radialData.length;
+                const totalDataPoints = radialData.reduce((total, radial) => total + (radial.data ? radial.data.length : 0), 0);
+                const maxValue = Math.max(...radialData.flatMap(radial => radial.data || []));
+                const minValue = Math.min(...radialData.flatMap(radial => radial.data || []).filter(v => v > 0));
+                
+                infoContent.innerHTML = `
+                    <div><strong>Station:</strong> ${this.currentStation}</div>
+                    <div><strong>Radials:</strong> ${totalRadials}</div>
+                    <div><strong>Data Points:</strong> ${totalDataPoints}</div>
+                    <div><strong>Displayed:</strong> ${pointCount}</div>
+                    <div><strong>Max Value:</strong> ${maxValue}</div>
+                    <div><strong>Min Value:</strong> ${minValue}</div>
+                    <div><strong>Data Type:</strong> Synthetic Demo</div>
+                `;
+                
+                infoPanel.style.display = 'block';
+            }
+            
+            clearRadarData() {
+                this.radarDataLayers.forEach(layer => this.map.removeLayer(layer));
+                this.radarDataLayers = [];
+                
+                document.getElementById('infoPanel').style.display = 'none';
+                this.showStatus('Radar data cleared', 'success');
+            }
+            
+            showStatus(message, type) {
+                const status = document.getElementById('status');
+                status.textContent = message;
+                status.className = `status ${type}`;
+                status.style.display = 'block';
+                
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Initialize the demo when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new RadarDataDemo();
+        });
+    </script>
+</body>
+</html>

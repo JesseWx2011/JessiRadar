@@ -431,3 +431,118 @@ main {
     box-shadow: 0 2px 12px rgba(0,0,0,0.18);
     margin-top: 0.5rem;
 } 
+/* Color Legend Styles */
+.color-legend {
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 15px !important;
+    border-radius: 8px !important;
+    border: 2px solid #3b82f6 !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 11px !important;
+    min-width: 140px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.color-legend div {
+    margin-bottom: 6px !important;
+}
+
+.color-legend div:last-child {
+    margin-bottom: 0 !important;
+}
+
+.color-legend .legend-title {
+    font-weight: 600 !important;
+    color: #3b82f6 !important;
+    margin-bottom: 10px !important;
+    text-align: center !important;
+    font-size: 12px !important;
+}
+
+/* Range Label Styles */
+.range-label {
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Data Info Marker Styles */
+.data-info-marker {
+    background: #3b82f6 !important;
+    color: white !important;
+    padding: 6px 10px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border: 2px solid white !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Radar Data Point Styles */
+.radar-data-point {
+    transition: all 0.2s ease !important;
+}
+
+.radar-data-point:hover {
+    transform: scale(1.2) !important;
+    z-index: 1000 !important;
+}
+
+/* Map Controls Enhancement */
+.map-controls .control-btn {
+    transition: all 0.2s ease !important;
+}
+
+.map-controls .control-btn:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Status Message Enhancement */
+.status-message {
+    position: fixed !important;
+    top: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 10000 !important;
+    padding: 12px 24px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+    transition: all 0.3s ease !important;
+    max-width: 90vw !important;
+    text-align: center !important;
+}
+
+.status-message.success {
+    background: rgba(34, 197, 94, 0.9) !important;
+    color: white !important;
+    border: 2px solid #22c55e !important;
+}
+
+.status-message.error {
+    background: rgba(239, 68, 68, 0.9) !important;
+    color: white !important;
+    border: 2px solid #ef4444 !important;
+}
+
+.status-message.loading {
+    background: rgba(59, 130, 246, 0.9) !important;
+    color: white !important;
+    border: 2px solid #3b82f6 !important;
+}
+
+.status-message.warning {
+    background: rgba(245, 158, 11, 0.9) !important;
+    color: white !important;
+    border: 2px solid #f59e0b !important;
+} 

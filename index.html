@@ -456,6 +456,9 @@
                 this.radarStations = [];
                 this.currentStation = null;
                 this.nexradData = null;
+                this.radarDataLayers = [];
+                this.nexradLayer = null;
+                this.intensityRings = [];
                 this.init();
             }
             
@@ -1230,13 +1233,92 @@
                         block8: dataView.getUint16(offset + 20, false)
                     };
                     
+                    // Parse radial data packets for actual radar data
+                    const radialData = this.parseRadialData(dataView, offset + 22);
+                    
                     return {
                         header: graphicHeader,
-                        offset: offset
+                        offset: offset,
+                        radialData: radialData
                     };
                 } catch (error) {
                     console.error('Error parsing graphic data:', error);
                     return null;
+                }
+            }
+            
+            parseRadialData(dataView, offset) {
+                try {
+                    const radialData = [];
+                    let currentOffset = offset;
+                    let packetCount = 0;
+                    
+                    console.log('Parsing radial data from offset:', offset, 'DataView size:', dataView.byteLength);
+                    
+                    // Parse radial data packets
+                    while (currentOffset < dataView.byteLength - 4) {
+                        packetCount++;
+                        
+                        const packetHeader = {
+                            packetCode: dataView.getUint16(currentOffset, false),
+                            firstRangeBin: dataView.getUint16(currentOffset + 2, false),
+                            numberOfRangeBins: dataView.getUint16(currentOffset + 4, false),
+                            centerAzimuth: dataView.getUint16(currentOffset + 6, false),
+                            azimuthalSpacing: dataView.getUint16(currentOffset + 8, false),
+                            radialStatus: dataView.getUint16(currentOffset + 10, false)
+                        };
+                        
+                        // Log first few packets for debugging
+                        if (packetCount <= 5) {
+                            console.log(`Packet ${packetCount}:`, packetHeader);
+                        }
+                        
+                        // Check if this is a valid radial data packet (0xAF1F)
+                        if (packetHeader.packetCode === 0xAF1F) {
+                            const dataStart = currentOffset + 12;
+                            const dataLength = packetHeader.numberOfRangeBins;
+                            
+                            if (dataStart + dataLength <= dataView.byteLength) {
+                                const rangeData = [];
+                                for (let i = 0; i < dataLength; i++) {
+                                    const dataValue = dataView.getUint8(dataStart + i);
+                                    rangeData.push(dataValue);
+                                }
+                                
+                                radialData.push({
+                                    header: packetHeader,
+                                    data: rangeData,
+                                    offset: currentOffset
+                                });
+                                
+                                if (radialData.length <= 3) {
+                                    console.log(`Radial ${radialData.length}:`, {
+                                        header: packetHeader,
+                                        dataSample: rangeData.slice(0, 10),
+                                        dataLength: rangeData.length
+                                    });
+                                }
+                            } else {
+                                console.warn(`Data packet extends beyond buffer: offset=${currentOffset}, length=${dataLength}, bufferSize=${dataView.byteLength}`);
+                            }
+                        }
+                        
+                        // Move to next packet (minimum 12 bytes for header)
+                        const nextOffset = Math.max(12, packetHeader.numberOfRangeBins + 12);
+                        currentOffset += nextOffset;
+                        
+                        // Safety check to prevent infinite loops
+                        if (packetCount > 1000) {
+                            console.warn('Too many packets, stopping parse');
+                            break;
+                        }
+                    }
+                    
+                    console.log(`Parsed ${packetCount} packets, found ${radialData.length} radial data packets`);
+                    return radialData;
+                } catch (error) {
+                    console.error('Error parsing radial data:', error);
+                    return [];
                 }
             }
             
@@ -1318,6 +1400,13 @@
                             this.intensityRings.push(circle);
                         });
                         
+                        // Display actual radar data if available
+                        if (radarData && radarData.graphicData && radarData.graphicData.radialData) {
+                            this.displayRadarData(radarData.graphicData.radialData, [lat, lon]);
+                            // Add color legend when displaying radar data
+                            this.addColorLegend();
+                        }
+                        
                         // Add data information if available
                         if (radarData) {
                             this.addDataInfo(radarData, [lat, lon]);
@@ -1327,6 +1416,176 @@
                         this.map.setView([lat, lon], 8);
                     }
                 }
+            }
+            
+            displayRadarData(radialData, stationCoords) {
+                try {
+                    const [stationLon, stationLat] = stationCoords;
+                    this.radarDataLayers = [];
+                    
+                    console.log('Displaying radar data:', {
+                        stationCoords,
+                        radialCount: radialData.length,
+                        sampleRadial: radialData[0]
+                    });
+                    
+                    // Create color scale for reflectivity data
+                    const colorScale = this.createReflectivityColorScale();
+                    
+                    let totalDataPoints = 0;
+                    let displayedPoints = 0;
+                    
+                    // Process each radial
+                    radialData.forEach((radial, radialIndex) => {
+                        if (radial.data && radial.data.length > 0) {
+                            const azimuth = radial.header.centerAzimuth / 10; // Convert to degrees
+                            const azimuthRad = (azimuth * Math.PI) / 180;
+                            
+                            totalDataPoints += radial.data.length;
+                            
+                            // Create points along this radial
+                            radial.data.forEach((dataValue, rangeIndex) => {
+                                if (dataValue > 0) { // Only show non-zero values
+                                    // Calculate range in meters (assuming 1km bins)
+                                    const rangeKm = rangeIndex * 1.0; // 1km resolution
+                                    const rangeMeters = rangeKm * 1000;
+                                    
+                                    // Calculate position
+                                    const pointLat = stationLat + (rangeMeters / 111000) * Math.cos(azimuthRad);
+                                    const pointLon = stationLon + (rangeMeters / 111000) * Math.sin(azimuthRad) / Math.cos(stationLat * Math.PI / 180);
+                                    
+                                    // Get color based on data value
+                                    const color = colorScale(dataValue);
+                                    
+                                    // Create circle for this data point
+                                    const point = L.circle([pointLat, pointLon], {
+                                        radius: 500, // 500m radius for visibility
+                                        color: color,
+                                        fillColor: color,
+                                        fillOpacity: 0.7,
+                                        weight: 1
+                                    });
+                                    
+                                    // Add tooltip with data value
+                                    point.bindTooltip(`Value: ${dataValue}<br>Range: ${rangeKm.toFixed(1)}km<br>Azimuth: ${azimuth.toFixed(1)}°`, {
+                                        permanent: false,
+                                        direction: 'top'
+                                    });
+                                    
+                                    point.addTo(this.map);
+                                    this.radarDataLayers.push(point);
+                                    displayedPoints++;
+                                }
+                            });
+                        }
+                    });
+                    
+                    console.log(`Radar data summary: ${totalDataPoints} total data points, ${displayedPoints} displayed points`);
+                    this.showStatus(`Displayed ${displayedPoints} radar data points`, 'success');
+                    
+                } catch (error) {
+                    console.error('Error displaying radar data:', error);
+                    this.showStatus('Error displaying radar data', 'error');
+                }
+            }
+            
+            createReflectivityColorScale() {
+                // Create a color scale for reflectivity values (0-255)
+                // This maps NEXRAD Level III data values to colors
+                return (value) => {
+                    if (value === 0) return '#000000'; // No data
+                    if (value < 10) return '#00ff00'; // Very light green
+                    if (value < 20) return '#40ff00'; // Light green
+                    if (value < 30) return '#80ff00'; // Green
+                    if (value < 40) return '#bfff00'; // Yellow-green
+                    if (value < 50) return '#ffff00'; // Yellow
+                    if (value < 60) return '#ffbf00'; // Orange
+                    if (value < 70) return '#ff8000'; // Dark orange
+                    if (value < 80) return '#ff4000'; // Red-orange
+                    if (value < 90) return '#ff0000'; // Red
+                    if (value < 100) return '#ff0080'; // Magenta
+                    if (value < 110) return '#ff00ff'; // Bright magenta
+                    if (value < 120) return '#8000ff'; // Purple
+                    if (value < 130) return '#4000ff'; // Blue
+                    if (value < 140) return '#0080ff'; // Light blue
+                    if (value < 150) return '#00ffff'; // Cyan
+                    if (value < 160) return '#00ff80'; // Blue-green
+                    if (value < 170) return '#00ff40'; // Green-blue
+                    if (value < 180) return '#00ff00'; // Green
+                    if (value < 190) return '#40ff00'; // Light green
+                    if (value < 200) return '#80ff00'; // Green
+                    if (value < 210) return '#bfff00'; // Yellow-green
+                    if (value < 220) return '#ffff00'; // Yellow
+                    if (value < 230) return '#ffbf00'; // Orange
+                    if (value < 240) return '#ff8000'; // Dark orange
+                    if (value < 250) return '#ff4000'; // Red-orange
+                    return '#ff0000'; // Red for highest values
+                };
+            }
+            
+            addColorLegend() {
+                // Remove existing legend
+                if (this.colorLegend) {
+                    this.map.removeControl(this.colorLegend);
+                }
+                
+                // Create color legend
+                const legend = L.control({ position: 'bottomright' });
+                
+                legend.onAdd = function(map) {
+                    const div = L.DomUtil.create('div', 'color-legend');
+                    div.style.cssText = `
+                        background: rgba(0, 0, 0, 0.8);
+                        color: white;
+                        padding: 10px;
+                        border-radius: 8px;
+                        border: 1px solid #3b82f6;
+                        font-family: monospace;
+                        font-size: 11px;
+                        min-width: 120px;
+                    `;
+                    
+                    div.innerHTML = `
+                        <div style="margin-bottom: 8px; font-weight: 600; color: #3b82f6;">Reflectivity Scale</div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #00ff00; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>0-19</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #ffff00; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>20-49</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #ff8000; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>50-79</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #ff0000; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>80-109</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #ff00ff; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>110-139</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #8000ff; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>140-169</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #00ffff; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>170-199</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <div style="width: 20px; height: 12px; background: #00ff00; margin-right: 8px; border: 1px solid #ccc;"></div>
+                            <span>200+</span>
+                        </div>
+                    `;
+                    
+                    return div;
+                };
+                
+                this.colorLegend = legend;
+                legend.addTo(this.map);
             }
             
             addDataInfo(radarData, coordinates) {
@@ -1398,6 +1657,12 @@
                                     <div style="margin-left: 10px; margin-top: 5px;">
                                         <div><strong>Blocks:</strong> ${radarData.graphicData.header.numberOfBlocks || 'N/A'}</div>
                                         <div><strong>Offset:</strong> ${radarData.graphicData.offset || 'N/A'}</div>
+                                        ${radarData.graphicData.radialData ? `
+                                            <div><strong>Radials:</strong> ${radarData.graphicData.radialData.length || 'N/A'}</div>
+                                            <div><strong>Data Points:</strong> ${radarData.graphicData.radialData.reduce((total, radial) => total + (radial.data ? radial.data.length : 0), 0) || 'N/A'}</div>
+                                            <div><strong>Max Value:</strong> ${Math.max(...radarData.graphicData.radialData.flatMap(radial => radial.data || [])) || 'N/A'}</div>
+                                            <div><strong>Min Value:</strong> ${Math.min(...radarData.graphicData.radialData.flatMap(radial => radial.data || []).filter(v => v > 0)) || 'N/A'}</div>
+                                        ` : ''}
                                     </div>
                                 </div>
                             ` : ''}
