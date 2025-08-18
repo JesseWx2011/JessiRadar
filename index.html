@@ -965,35 +965,59 @@
             
             async parseNEXRADLevel3(arrayBuffer) {
                 try {
-                    console.log('Parsing NEXRAD Level III data, size:', arrayBuffer.byteLength);
+                    console.log('Parsing NEXRAD Level III data using AtticRadar approach, size:', arrayBuffer.byteLength);
                     
                     const dataView = new DataView(arrayBuffer);
                     
-                    // NEXRAD Level III Message Header (16 bytes)
-                    const messageHeader = {
-                        messageSize: dataView.getUint32(0, false), // Big-endian
-                        messageType: dataView.getUint16(4, false),
-                        sequenceNumber: dataView.getUint16(6, false),
-                        julianDate: dataView.getUint16(8, false),
-                        milliseconds: dataView.getUint32(10, false),
-                        messageDate: dataView.getUint16(14, false)
-                    };
+                    // Parse text header (first 30 bytes)
+                    const textHeader = this.parseTextHeader(dataView);
+                    console.log('Text Header:', textHeader);
                     
-                    console.log('NEXRAD Message Header:', messageHeader);
+                    // Parse message header (16 bytes)
+                    const messageHeader = this.parseMessageHeader(dataView, 30);
+                    console.log('Message Header:', messageHeader);
                     
-                    // Calculate actual date from Julian date
-                    const messageDate = this.julianToDate(messageHeader.julianDate, messageHeader.messageDate);
-                    console.log('Message Date:', messageDate);
+                    // Parse product description (60 bytes)
+                    const productDescription = this.parseProductDescription(dataView, 46);
+                    console.log('Product Description:', productDescription);
                     
-                    // Try to find product-specific data
-                    let radarData = null;
-                    
-                    // Look for different product types
-                    if (messageHeader.messageType === 2) { // Product Message
-                        radarData = this.parseProductMessage(dataView, messageHeader);
-                    } else if (messageHeader.messageType === 1) { // Data Message
-                        radarData = this.parseDataMessage(dataView, messageHeader);
+                    // Check if data is compressed and decompress if needed
+                    let decompressedData = arrayBuffer;
+                    if (productDescription.compressionMethod > 0) {
+                        console.log('Data is compressed, attempting decompression...');
+                        decompressedData = await this.decompressData(arrayBuffer, productDescription);
                     }
+                    
+                    // Parse symbology data if available
+                    let symbologyData = null;
+                    if (productDescription.offsetSymbology > 0) {
+                        const symbologyOffset = 30 + (productDescription.offsetSymbology * 2);
+                        if (symbologyOffset < decompressedData.byteLength) {
+                            symbologyData = this.parseSymbologyData(new DataView(decompressedData), symbologyOffset);
+                            console.log('Symbology Data:', symbologyData);
+                        }
+                    }
+                    
+                    // Parse graphic data if available
+                    let graphicData = null;
+                    if (productDescription.offsetGraphic > 0) {
+                        const graphicOffset = 30 + (productDescription.offsetGraphic * 2);
+                        if (graphicOffset < decompressedData.byteLength) {
+                            graphicData = this.parseGraphicData(new DataView(decompressedData), graphicOffset);
+                            console.log('Graphic Data:', graphicData);
+                        }
+                    }
+                    
+                    // Create comprehensive radar data object
+                    const radarData = {
+                        textHeader,
+                        messageHeader,
+                        productDescription,
+                        symbologyData,
+                        graphicData,
+                        rawData: arrayBuffer,
+                        decompressedData
+                    };
                     
                     // Create visualization with the parsed data
                     this.createNEXRADVisualization(radarData);
@@ -1005,97 +1029,213 @@
                 }
             }
             
-            julianToDate(julianDate, messageDate) {
-                // Convert NEXRAD Julian date to regular date
-                const year = Math.floor(julianDate / 1000);
-                const dayOfYear = julianDate % 1000;
+            parseTextHeader(dataView) {
+                // Parse text header (first 30 bytes)
+                const text = new TextDecoder().decode(new Uint8Array(dataView.buffer, 0, 30));
                 
-                const date = new Date(year, 0, dayOfYear);
-                date.setMilliseconds(messageDate);
-                
-                return date;
+                return {
+                    fileType: text.substring(0, 4),
+                    type: text.substring(4, 7),
+                    date: text.substring(7, 15),
+                    time: text.substring(15, 23),
+                    station: text.substring(23, 27),
+                    version: text.substring(27, 30)
+                };
             }
             
-            parseProductMessage(dataView, header) {
+            parseMessageHeader(dataView, offset) {
+                // Parse message header (16 bytes)
+                return {
+                    code: dataView.getUint16(offset, false), // Big-endian
+                    julianDate: dataView.getUint16(offset + 2, false),
+                    seconds: dataView.getUint32(offset + 4, false),
+                    length: dataView.getUint32(offset + 8, false),
+                    source: dataView.getUint16(offset + 12, false),
+                    dest: dataView.getUint16(offset + 14, false)
+                };
+            }
+            
+            parseProductDescription(dataView, offset) {
+                // Parse product description (60 bytes)
+                const divider = dataView.getInt16(offset, false);
+                if (divider !== -1) {
+                    throw new Error(`Invalid product description divider: ${divider}`);
+                }
+                
+                return {
+                    abbreviation: this.getProductAbbreviation(dataView.getUint16(offset + 2, false)),
+                    description: this.getProductDescription(dataView.getUint16(offset + 2, false)),
+                    latitude: dataView.getInt32(offset + 4, false) / 1000,
+                    longitude: dataView.getInt32(offset + 8, false) / 1000,
+                    height: dataView.getInt16(offset + 12, false),
+                    code: dataView.getUint16(offset + 14, false),
+                    mode: dataView.getUint16(offset + 16, false),
+                    vcp: dataView.getUint16(offset + 18, false),
+                    sequenceNumber: dataView.getUint16(offset + 20, false),
+                    volumeScanNumber: dataView.getUint16(offset + 22, false),
+                    volumeScanDate: dataView.getUint16(offset + 24, false),
+                    volumeScanTime: dataView.getUint32(offset + 26, false),
+                    productDate: dataView.getUint16(offset + 30, false),
+                    productTime: dataView.getUint32(offset + 32, false),
+                    elevationNumber: dataView.getUint16(offset + 36, false),
+                    version: dataView.getUint8(offset + 38, false),
+                    spotBlank: dataView.getUint8(offset + 39, false),
+                    offsetSymbology: dataView.getUint32(offset + 40, false),
+                    offsetGraphic: dataView.getUint32(offset + 44, false),
+                    offsetTabular: dataView.getUint32(offset + 48, false),
+                    compressionMethod: dataView.getUint16(offset + 52, false),
+                    uncompressedProductSize: dataView.getUint32(offset + 54, false)
+                };
+            }
+            
+            getProductAbbreviation(code) {
+                // Map product codes to abbreviations
+                const productMap = {
+                    19: 'N0B', // Base Reflectivity
+                    20: 'N0G', // Base Reflectivity Legacy
+                    21: 'N0Q', // Base Reflectivity HR
+                    27: 'N0U', // Base Velocity
+                    28: 'N1U', // Base Velocity 1st
+                    29: 'N2U', // Base Velocity 2nd
+                    30: 'N3U', // Base Velocity 3rd
+                    32: 'N0S', // Storm Relative Velocity
+                    34: 'N0V', // Base Velocity HR
+                    37: 'N0C', // Correlation Coefficient
+                    38: 'N0K', // Specific Differential Phase
+                    41: 'N0Z', // Differential Reflectivity
+                    57: 'N0H', // Hydrometeor Classification
+                    58: 'N0P', // One Hour Precipitation
+                    59: 'N1P', // Storm Total Precipitation
+                    61: 'N0T', // Storm Tracking Information
+                    78: 'N0R', // Digital Precipitation Array
+                    80: 'N0M', // One Hour Precipitation
+                    94: 'N0I', // Digital Instantaneous Precipitation
+                    99: 'N0U', // Base Velocity
+                    134: 'N0L', // Digital Base Reflectivity
+                    135: 'N0M', // Digital One Hour Precipitation
+                    138: 'N0Q', // Digital Base Reflectivity HR
+                    141: 'N0S', // Digital Storm Relative Velocity
+                    153: 'N0U', // Digital Base Velocity
+                    154: 'N0V', // Digital Base Velocity HR
+                    159: 'N0H', // Digital Hydrometeor Classification
+                    161: 'N0K', // Digital Specific Differential Phase
+                    165: 'N0Z', // Digital Differential Reflectivity
+                    170: 'N0C', // Digital Correlation Coefficient
+                    172: 'N0P', // Digital One Hour Precipitation
+                    177: 'N0I', // Digital Instantaneous Precipitation
+                    180: 'N0T', // Digital Storm Tracking Information
+                    182: 'N0R', // Digital Precipitation Array
+                    186: 'N0M'  // Digital Storm Total Precipitation
+                };
+                
+                return productMap[code] || `Unknown(${code})`;
+            }
+            
+            getProductDescription(code) {
+                // Map product codes to descriptions
+                const descriptionMap = {
+                    19: 'Base Reflectivity',
+                    20: 'Base Reflectivity Legacy',
+                    21: 'Base Reflectivity HR',
+                    27: 'Base Velocity',
+                    28: 'Base Velocity 1st',
+                    29: 'Base Velocity 2nd',
+                    30: 'Base Velocity 3rd',
+                    32: 'Storm Relative Velocity',
+                    34: 'Base Velocity HR',
+                    37: 'Correlation Coefficient',
+                    38: 'Specific Differential Phase',
+                    41: 'Differential Reflectivity',
+                    57: 'Hydrometeor Classification',
+                    58: 'One Hour Precipitation',
+                    59: 'Storm Total Precipitation',
+                    61: 'Storm Tracking Information',
+                    78: 'Digital Precipitation Array',
+                    80: 'One Hour Precipitation',
+                    94: 'Digital Instantaneous Precipitation',
+                    99: 'Base Velocity',
+                    134: 'Digital Base Reflectivity',
+                    135: 'Digital One Hour Precipitation',
+                    138: 'Digital Base Reflectivity HR',
+                    141: 'Digital Storm Relative Velocity',
+                    153: 'Digital Base Velocity',
+                    154: 'Digital Base Velocity HR',
+                    159: 'Digital Hydrometeor Classification',
+                    161: 'Digital Specific Differential Phase',
+                    165: 'Digital Differential Reflectivity',
+                    170: 'Digital Correlation Coefficient',
+                    172: 'Digital One Hour Precipitation',
+                    177: 'Digital Instantaneous Precipitation',
+                    180: 'Digital Storm Tracking Information',
+                    182: 'Digital Precipitation Array',
+                    186: 'Digital Storm Total Precipitation'
+                };
+                
+                return descriptionMap[code] || 'Unknown Product';
+            }
+            
+            async decompressData(arrayBuffer, productDescription) {
                 try {
-                    // Product Message parsing
-                    const productHeader = {
-                        productCode: dataView.getUint16(16, false),
-                        operationalMode: dataView.getUint16(18, false),
-                        volumeScanNumber: dataView.getUint16(20, false),
-                        volumeScanDate: dataView.getUint16(22, false),
-                        volumeScanTime: dataView.getUint32(24, false),
-                        generationDate: dataView.getUint16(28, false),
-                        generationTime: dataView.getUint32(30, false)
+                    // For now, return the original data
+                    // In a full implementation, you'd handle bzip2 decompression here
+                    console.log('Decompression not yet implemented, using original data');
+                    return arrayBuffer;
+                } catch (error) {
+                    console.error('Decompression failed:', error);
+                    return arrayBuffer;
+                }
+            }
+            
+            parseSymbologyData(dataView, offset) {
+                try {
+                    // Parse symbology header
+                    const symbologyHeader = {
+                        divider: dataView.getInt16(offset, false),
+                        layerDivider: dataView.getInt16(offset + 2, false),
+                        numberOfLayers: dataView.getUint16(offset + 4, false),
+                        layer1: dataView.getUint16(offset + 6, false),
+                        layer2: dataView.getUint16(offset + 8, false),
+                        layer3: dataView.getUint16(offset + 10, false),
+                        layer4: dataView.getUint16(offset + 12, false),
+                        layer5: dataView.getUint16(offset + 14, false),
+                        layer6: dataView.getUint16(offset + 16, false),
+                        layer7: dataView.getUint16(offset + 18, false),
+                        layer8: dataView.getUint16(offset + 20, false)
                     };
-                    
-                    console.log('Product Header:', productHeader);
-                    
-                    // Look for graphic product data
-                    const graphicProduct = this.findGraphicProduct(dataView, header.messageSize);
                     
                     return {
-                        type: 'product',
-                        header: productHeader,
-                        graphicData: graphicProduct
+                        header: symbologyHeader,
+                        offset: offset
                     };
-                    
                 } catch (error) {
-                    console.error('Error parsing product message:', error);
+                    console.error('Error parsing symbology data:', error);
                     return null;
                 }
             }
             
-            parseDataMessage(dataView, header) {
+            parseGraphicData(dataView, offset) {
                 try {
-                    // Data Message parsing
-                    const dataHeader = {
-                        dataType: dataView.getUint16(16, false),
-                        dataTime: dataView.getUint32(18, false),
-                        dataDate: dataView.getUint16(22, false)
+                    // Parse graphic header
+                    const graphicHeader = {
+                        divider: dataView.getInt16(offset, false),
+                        blockDivider: dataView.getInt16(offset + 2, false),
+                        numberOfBlocks: dataView.getUint16(offset + 4, false),
+                        block1: dataView.getUint16(offset + 6, false),
+                        block2: dataView.getUint16(offset + 8, false),
+                        block3: dataView.getUint16(offset + 10, false),
+                        block4: dataView.getUint16(offset + 12, false),
+                        block5: dataView.getUint16(offset + 14, false),
+                        block6: dataView.getUint16(offset + 16, false),
+                        block7: dataView.getUint16(offset + 18, false),
+                        block8: dataView.getUint16(offset + 20, false)
                     };
-                    
-                    console.log('Data Header:', dataHeader);
                     
                     return {
-                        type: 'data',
-                        header: dataHeader
+                        header: graphicHeader,
+                        offset: offset
                     };
-                    
                 } catch (error) {
-                    console.error('Error parsing data message:', error);
-                    return null;
-                }
-            }
-            
-            findGraphicProduct(dataView, messageSize) {
-                try {
-                    // Look for graphic product data in the message
-                    // This is a simplified approach - real NEXRAD parsing is more complex
-                    
-                    for (let offset = 16; offset < messageSize - 4; offset++) {
-                        // Look for known patterns or product codes
-                        const potentialCode = dataView.getUint16(offset, false);
-                        
-                        // Common NEXRAD product codes
-                        if (potentialCode === 0x8000 || potentialCode === 0x8001 || 
-                            potentialCode === 0x8002 || potentialCode === 0x8003) {
-                            
-                            console.log('Found potential graphic product at offset:', offset, 'code:', potentialCode.toString(16));
-                            
-                            // Extract some basic information
-                            return {
-                                productCode: potentialCode,
-                                offset: offset,
-                                size: messageSize - offset
-                            };
-                        }
-                    }
-                    
-                    return null;
-                    
-                } catch (error) {
-                    console.error('Error finding graphic product:', error);
+                    console.error('Error parsing graphic data:', error);
                     return null;
                 }
             }
@@ -1199,22 +1339,72 @@
                             padding: 15px;
                             border-radius: 8px;
                             border: 1px solid #3b82f6;
-                            min-width: 250px;
+                            min-width: 300px;
                             font-family: monospace;
                             font-size: 12px;
+                            max-height: 400px;
+                            overflow-y: auto;
                         ">
-                            <h4 style="margin: 0 0 10px 0; color: #3b82f6;">NEXRAD Data Info</h4>
-                            <div><strong>Type:</strong> ${radarData.type}</div>
-                            ${radarData.header ? `
-                                <div><strong>Product Code:</strong> 0x${radarData.header.productCode?.toString(16) || 'N/A'}</div>
-                                <div><strong>Volume Scan:</strong> ${radarData.header.volumeScanNumber || 'N/A'}</div>
-                                <div><strong>Operational Mode:</strong> ${radarData.header.operationalMode || 'N/A'}</div>
+                            <h4 style="margin: 0 0 10px 0; color: #3b82f6;">NEXRAD Level III Data</h4>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #fbbf24;">Text Header:</strong><br>
+                                <div style="margin-left: 10px; margin-top: 5px;">
+                                    <div><strong>File Type:</strong> ${radarData.textHeader?.fileType || 'N/A'}</div>
+                                    <div><strong>Product:</strong> ${radarData.textHeader?.type || 'N/A'}</div>
+                                    <div><strong>Station:</strong> ${radarData.textHeader?.station || 'N/A'}</div>
+                                    <div><strong>Date:</strong> ${radarData.textHeader?.date || 'N/A'}</div>
+                                    <div><strong>Time:</strong> ${radarData.textHeader?.time || 'N/A'}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #fbbf24;">Message Header:</strong><br>
+                                <div style="margin-left: 10px; margin-top: 5px;">
+                                    <div><strong>Code:</strong> ${radarData.messageHeader?.code || 'N/A'}</div>
+                                    <div><strong>Length:</strong> ${radarData.messageHeader?.length || 'N/A'} bytes</div>
+                                    <div><strong>Julian Date:</strong> ${radarData.messageHeader?.julianDate || 'N/A'}</div>
+                                    <div><strong>Seconds:</strong> ${radarData.messageHeader?.seconds || 'N/A'}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #fbbf24;">Product Description:</strong><br>
+                                <div style="margin-left: 10px; margin-top: 5px;">
+                                    <div><strong>Product:</strong> ${radarData.productDescription?.abbreviation || 'N/A'} - ${radarData.productDescription?.description || 'N/A'}</div>
+                                    <div><strong>Location:</strong> ${radarData.productDescription?.latitude?.toFixed(3) || 'N/A'}, ${radarData.productDescription?.longitude?.toFixed(3) || 'N/A'}</div>
+                                    <div><strong>Height:</strong> ${radarData.productDescription?.height || 'N/A'} m</div>
+                                    <div><strong>Mode:</strong> ${radarData.productDescription?.mode || 'N/A'}</div>
+                                    <div><strong>VCP:</strong> ${radarData.productDescription?.vcp || 'N/A'}</div>
+                                    <div><strong>Volume Scan:</strong> ${radarData.productDescription?.volumeScanNumber || 'N/A'}</div>
+                                    <div><strong>Elevation:</strong> ${radarData.productDescription?.elevationNumber || 'N/A'}</div>
+                                    <div><strong>Compression:</strong> ${radarData.productDescription?.compressionMethod > 0 ? 'Yes' : 'No'}</div>
+                                </div>
+                            </div>
+                            
+                            ${radarData.symbologyData ? `
+                                <div style="margin-bottom: 15px;">
+                                    <strong style="color: #fbbf24;">Symbology Data:</strong><br>
+                                    <div style="margin-left: 10px; margin-top: 5px;">
+                                        <div><strong>Layers:</strong> ${radarData.symbologyData.header.numberOfLayers || 'N/A'}</div>
+                                        <div><strong>Offset:</strong> ${radarData.symbologyData.offset || 'N/A'}</div>
+                                    </div>
+                                </div>
                             ` : ''}
+                            
                             ${radarData.graphicData ? `
-                                <div><strong>Graphic Data:</strong> ${radarData.graphicData.size} bytes</div>
+                                <div style="margin-bottom: 15px;">
+                                    <strong style="color: #fbbf24;">Graphic Data:</strong><br>
+                                    <div style="margin-left: 10px; margin-top: 5px;">
+                                        <div><strong>Blocks:</strong> ${radarData.graphicData.header.numberOfBlocks || 'N/A'}</div>
+                                        <div><strong>Offset:</strong> ${radarData.graphicData.offset || 'N/A'}</div>
+                                    </div>
+                                </div>
                             ` : ''}
-                            <div style="margin-top: 10px; font-size: 10px; opacity: 0.7;">
-                                Data parsed from NEXRAD Level III file
+                            
+                            <div style="margin-top: 15px; font-size: 10px; opacity: 0.7; border-top: 1px solid #374151; padding-top: 10px;">
+                                Data parsed using AtticRadar methodology<br>
+                                File size: ${(radarData.rawData?.byteLength / 1024).toFixed(1)} KB
                             </div>
                         </div>
                     `;
